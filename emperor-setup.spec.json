@@ -31,7 +31,7 @@
 	"seeAlso": [
 		"emperor(1)"
 	],
-	"bugs": "There are no known bugs at this time! :D If you find any, however, please report them at <https://github.com/TheSignPainter98/emperor/issues>",
+	"bugs": "There are no known bugs at this time! :D If you find any, however, please report them at <https://github.com/emperor-lang/emperor-setup/issues>",
 	"actions": [
 		{
 			"option_strings": [
@@ -57,7 +57,20 @@
 			"default": "==SUPPRESS==",
 			"choices": null,
 			"required": false,
-			"help": "show this help message and exit",
+			"help": "Output flags to be used with GCC",
+			"metavar": null
+		},
+		{
+			"option_strings": [
+				"--cflags"
+			],
+			"dest": "cflags",
+			"nargs": 0,
+			"const": null,
+			"default": "==SUPPRESS==",
+			"choices": null,
+			"required": false,
+			"help": "Output C libraries to be used with GCC",
 			"metavar": null
 		}
 	]
