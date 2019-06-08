@@ -1,0 +1,64 @@
+{
+	"description": "Compiler flags for the Emperor Language v1.0.0",
+	"prog": "emperor-setup",
+	"epilog": "This is maintained by Edward Jones, and source code can be found at <https://github.com/TheSignPainter98/emperor>",
+	"licence": [
+		"Copyright (c) 2019, Edward Jones\n",
+		"\n",
+		"%%%%%%LICENSE_START(GPLv2+_DOC_FULL)\n",
+		"This is free documentation; you can redistribute it and/or\n",
+		"modify it under the terms of the GNU General Public License as\n",
+		"published by the Free Software Foundation; either version 2 of\n",
+		"the License, or (at your option) any later version.\n",
+		"\n",
+		"The GNU General Public License's references to \"object code\"\n",
+		"and \"executables\" are to be interpreted as the output of any\n",
+		"document formatting or typesetting system, including\n",
+		"intermediate and printed output.\n",
+		"\n",
+		"This manual is distributed in the hope that it will be useful,\n",
+		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n",
+		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n",
+		"GNU General Public License for more details.\n",
+		"\n",
+		"You should have received a copy of the GNU General Public\n",
+		"License along with this manual; if not, see\n",
+		"<http://www.gnu.org/licenses/>.\n",
+		"%%%%%%LICENSE_END"
+	],
+	"version": "1.0.0",
+	"date": "08 June 2019",
+	"seeAlso": [
+		"emperor(1)"
+	],
+	"bugs": "There are no known bugs at this time! :D If you find any, however, please report them at <https://github.com/TheSignPainter98/emperor/issues>",
+	"actions": [
+		{
+			"option_strings": [
+				"-h",
+				"--help"
+			],
+			"dest": "help",
+			"nargs": 0,
+			"const": null,
+			"default": "==SUPPRESS==",
+			"choices": null,
+			"required": false,
+			"help": "Show usage information and exit",
+			"metavar": null
+		},
+		{
+			"option_strings": [
+				"--clibs"
+			],
+			"dest": "clibs",
+			"nargs": 0,
+			"const": null,
+			"default": "==SUPPRESS==",
+			"choices": null,
+			"required": false,
+			"help": "show this help message and exit",
+			"metavar": null
+		}
+	]
+}
