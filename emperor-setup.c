@@ -1,17 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "emperor-setup.h"
 
-static const char help[] = "Hello, world!";
-static const char cFlags[] = "-Wall -Werror -Wpedantic -pedantic-errors -O3 -g";
-static const char cLibs[] = "";
+static const char tooFewArgsHelp[] = "incorrect usage\nTry emperor-setup --help for more information";
+
+// TODO: run argument parser generator for options
 
 int main(int argc, char **argv)
 {
 	// Check sufficient arguments have been given
 	if (argc <= 1)
 	{
-		fprintf(stderr, "%s\n", help);
+		fprintf(stderr, "%s: %s\n", argv[0], tooFewArgsHelp);
 		exit(-1);
 	}
 
@@ -20,18 +18,15 @@ int main(int argc, char **argv)
 	{
 		if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0)
 		{
-			printf("%s\n", help);
+			printf("%s\n", help());
 		}
 		else if (strcmp("--cflags", argv[i]) == 0)
 		{
-			printf("%s\n", cFlags);
+			printf("%s\n", cFlags());
 		}
-		// else if (strcmp("--profiler", argv[i]) == 0)
-		// {
-		// }
 		else if (strcmp("--clibs", argv[i]) == 0)
 		{
-			printf("%s\n", cLibs);
+			printf("%s\n", cLibs());
 		}
 		else
 		{
@@ -41,4 +36,22 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+
+const char *help()
+{
+	static const char help[] = "Help message";
+	return help;
+}
+
+const char *cFlags()
+{
+	const char *cFlags = "-Wall -Werror -Wpedantic -pedantic-errors -O3 -g";
+	return cFlags;
+}
+
+const char *cLibs()
+{
+	static const char cLibs[] = "-I . -I emperor-std";
+	return cLibs;
 }
