@@ -46,12 +46,13 @@ const char *help()
 
 const char *cFlags()
 {
-	const char *cFlags = "-Wall -Werror -Wpedantic -pedantic-errors -O3 -g";
+	// -std=c18
+	const char *cFlags = "-Wall -Werror -Wpedantic -pedantic-errors -I . -I /usr/include/emperor/ -O3 -g";
 	return cFlags;
 }
 
 const char *cLibs()
 {
-	static const char cLibs[] = "-I . -I emperor-std";
+	static const char cLibs[] = "-I . -I /usr/include/emperor/ -l pcre";
 	return cLibs;
 }
