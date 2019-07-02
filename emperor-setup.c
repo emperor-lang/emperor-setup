@@ -4,7 +4,7 @@ static const char tooFewArgsHelp[] = "incorrect usage\nTry emperor-setup --help 
 
 // TODO: run argument parser generator for options
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	// Check sufficient arguments have been given
 	if (argc <= 1)
@@ -38,20 +38,20 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-const char *help()
+const char* help()
 {
 	static const char help[] = "Help message";
 	return help;
 }
 
-const char *cFlags()
+const char* cFlags()
 {
 	// -std=c18
-	const char *cFlags = "-Wall -Werror -Wpedantic -pedantic-errors -I . -I /usr/include/emperor/ -O3 -g";
+	const char* cFlags = "-Wall -Werror -Wpedantic -pedantic-errors -I . -I /usr/include/emperor/ -O3 -g";
 	return cFlags;
 }
 
-const char *cLibs()
+const char* cLibs()
 {
 	static const char cLibs[] = "-I . -I /usr/include/emperor/ -l pcre";
 	return cLibs;
