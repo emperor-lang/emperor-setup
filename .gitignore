@@ -1,1 +1,4 @@
 emperor-setup
+emperor-setup-args.*
+*.o
+*.1.gz

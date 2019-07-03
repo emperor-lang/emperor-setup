@@ -1,39 +1,29 @@
 #include "emperor-setup.h"
-
-static const char tooFewArgsHelp[] = "incorrect usage\nTry emperor-setup --help for more information";
-
-// TODO: run argument parser generator for options
+#include "emperor-setup-args.h"
 
 int main(int argc, char** argv)
 {
-	// Check sufficient arguments have been given
-	if (argc <= 1)
+	args_t* args = parseArgs(argc, argv);
+
+	// Ensure the correct number of arguments
+	if (args->cFlags & args->libs)
 	{
-		fprintf(stderr, "%s: %s\n", argv[0], tooFewArgsHelp);
-		exit(-1);
+		fprintf(stderr, "Please use one flag per call\n");
+		free(args);
+		exit(1);
 	}
 
-	// Output gcc flags for each mapping
-	for (int i = 1; i < argc; i++)
+	// Output the correct set of flags
+	if (args->cFlags)
 	{
-		if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0)
-		{
-			printf("%s\n", help());
-		}
-		else if (strcmp("--cflags", argv[i]) == 0)
-		{
-			printf("%s\n", cFlags());
-		}
-		else if (strcmp("--clibs", argv[i]) == 0)
-		{
-			printf("%s\n", cLibs());
-		}
-		else
-		{
-			fprintf(stderr, "%s %s\n", "Unrecognised argument:", argv[i]);
-			exit(-1);
-		}
+		printf("%s\n", cFlags());
 	}
+	else if (args->libs)
+	{
+		printf("%s\n", libs());
+	}
+
+	free(args);
 
 	return 0;
 }
@@ -51,8 +41,8 @@ const char* cFlags()
 	return cFlags;
 }
 
-const char* cLibs()
+const char* libs()
 {
-	static const char cLibs[] = "-I . -I /usr/include/emperor/ -l pcre";
-	return cLibs;
+	static const char libs[] = "-l pcre";
+	return libs;
 }

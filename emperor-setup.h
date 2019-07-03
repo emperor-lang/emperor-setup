@@ -5,4 +5,4 @@
 int main(int argc, char** argv);
 const char* help();
 const char* cFlags();
-const char* cLibs();
+const char* libs();
