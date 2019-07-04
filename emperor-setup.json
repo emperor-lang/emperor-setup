@@ -17,6 +17,7 @@
 			"default": "false"
 		},
 		{
+			"short": "-c",
 			"long": "--cflags",
 			"type": "flag",
 			"mandatory": false,
@@ -25,12 +26,40 @@
 			"dest": "cFlags"
 		},
 		{
+			"short" : "-l",
 			"long": "--libs",
 			"type": "flag",
 			"mandatory": false,
 			"help": "Output required library flags",
 			"default": "false",
 			"dest": "libs"
+		},
+		{
+			"short": "-B",
+			"long": "--binary-install-location",
+			"type": "flag",
+			"mandatory": false,
+			"help": "Location where binary executables are located once installed",
+			"default": "false",
+			"dest": "binaryInstallLocation"
+		},
+		{
+			"short": "-L",
+			"long": "--library-install-location",
+			"type": "flag",
+			"dest": "libraryInstallLocation",
+			"mandatory": false,
+			"default": "false",
+			"help": "Location where emperor libraries are located once installed"
+		},
+		{
+			"short": "-D",
+			"long": "--data-install-location",
+			"type": "flag",
+			"default": "false",
+			"dest": "dataInstallLocation",
+			"mandatory": false,
+			"help": "Location where data files for emperor programs may be installed (read/write)"
 		}
 	]
 }

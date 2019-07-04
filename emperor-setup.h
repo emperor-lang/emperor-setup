@@ -3,6 +3,8 @@
 #include <string.h>
 
 int main(int argc, char** argv);
-const char* help();
 const char* cFlags();
 const char* libs();
+const char* binaryInstallLocation();
+const char* libraryInstallLocation();
+const char* dataInstallLocation();
