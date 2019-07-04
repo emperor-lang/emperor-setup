@@ -5,11 +5,8 @@ int main(int argc, char** argv)
 {
 	args_t* args = parseArgs(argc, argv);
 
-	int totalFlags = args->cFlags + 
-		args->libs + 
-		args->binaryInstallLocation + 
-		args->libraryInstallLocation + 
-		args->dataInstallLocation;
+	int totalFlags = args->cFlags + args->libs + args->binaryInstallLocation + args->libraryInstallLocation
+	    + args->dataInstallLocation;
 
 	// Ensure the correct number of arguments
 	if (totalFlags != 1)
