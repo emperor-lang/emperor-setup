@@ -3,3 +3,5 @@ emperor-setup-args.*
 *.o
 *.1.gz
 *_completions.sh
+docs/latex/
+docs/html/

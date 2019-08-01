@@ -48,6 +48,12 @@ $(COMPLETION_INSTALL_LOCATION): ./emperor-setup_completions.sh;
 	argcompgen < $< > $@
 .DELETE_ON_ERROR: ./emperor-setup_completions.sh
 
+doc: ./docs/html/index.html
+.PHONY: doc
+
+./docs/html/index.html: ./emperor-setup.config ./emperor-setup.c ./emperor-setup.h ./emperor-setup-args.c ./emperor-setup-args.h
+	doxygen $<
+
 clean-installation:
 	sudo $(RM) $(EXECUTABLE_INSTALL_LOCATION) 	2>/dev/null || true
 	sudo $(RM) $(MAN_INSTALL_LOCATION) 			2>/dev/null || true
@@ -60,4 +66,5 @@ clean:
 	-@$(RM) *.o						2>/dev/null	|| true
 	-@$(RM) emperor-setup-args.* 	2>/dev/null	|| true
 	-@$(RM) *_completions.sh		2>/dev/null || true
+	-@$(RM) -r ./docs/				2>/dev/null || true
 .PHONY: clean
