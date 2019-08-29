@@ -6,6 +6,7 @@ import Args
     , binaryInstallLocation
     , cFlags
     , dataInstallLocation
+    , includeLocation
     , input
     , installDependencies
     , libraryInstallLocation
@@ -25,7 +26,8 @@ import System.IO (hPutStrLn, stderr)
 main :: IO ()
 main = do
     args <- parseArgv
-    checkUnique args
+
+    -- Go through the actions, perform each if necessary
     if addDependency args
         then addDependencyAction args
         else if installDependencies args
@@ -35,12 +37,14 @@ main = do
                           else if libs args
                                    then libsAction args
                                    else if binaryInstallLocation args
-                                            then binaryInstallLocationAction args
+                                            then putStrLn binLoc
                                             else if libraryInstallLocation args
-                                                     then libraryInstallLocationAction args
+                                                     then putStrLn libLoc
                                                      else if dataInstallLocation args
-                                                              then libraryInstallLocationAction args
-                                                              else do
+                                                              then putStrLn dataLoc
+                                                              else if includeLocation args
+                                                                then putStrLn includeLoc
+                                                                else do
                                                                   progname <- getProgName
                                                                   hPutStrLn stderr $
                                                                       "Please use one flag per call, use '" ++
@@ -57,11 +61,12 @@ cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
     p <- getPackageMeta args
     -- TODO: Fix shell injection problem here and in libsAction
+    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I."
     let libraryLocations =
             intercalate " " $ (\(d, v) -> "-L" ++ libLoc ++ d ++ "/" ++ v ++ "/") <$> (assocs . dependencies) p
     let includeLocations =
             intercalate " " $ (\(d, v) -> "-I" ++ includeLoc ++ d ++ "/" ++ v ++ "/") <$> (assocs . dependencies) p
-    putStrLn $ "-Wall -Werror -Wpedantic -pedantic-errors -O3 -g -I. " ++ libraryLocations ++ " " ++ includeLocations
+    putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 libsAction :: Args -> IO ()
 libsAction args = do
@@ -71,16 +76,12 @@ libsAction args = do
 getPackageMeta :: Args -> IO Package
 getPackageMeta args = do
     c <- readFile (input args)
-    let r = eitherDecode c
-    case r of
+    case eitherDecode c of
         Left m -> error m
         Right p -> return p
 
-binaryInstallLocationAction :: Args -> IO ()
-binaryInstallLocationAction _ = putStrLn "/usr/bin/"
-
-libraryInstallLocationAction :: Args -> IO ()
-libraryInstallLocationAction _ = putStrLn libLoc
+binLoc :: String
+binLoc = "/usr/bin/"
 
 libLoc :: String
 libLoc = "/usr/lib/emperor/"
@@ -88,25 +89,5 @@ libLoc = "/usr/lib/emperor/"
 includeLoc :: String
 includeLoc = "/usr/include/emperor/"
 
-dataInstallLocationAction :: Args -> IO ()
-dataInstallLocationAction _ = putStrLn "/usr/share/emperor/"
-
-checkUnique :: Args -> IO ()
-checkUnique args =
-    if length
-           (filter
-                id
-                [ addDependency args
-                , installDependencies args
-                , cFlags args
-                , libs args
-                , binaryInstallLocation args
-                , libraryInstallLocation args
-                , dataInstallLocation args
-                ]) ==
-       1
-        then return ()
-        else do
-            progname <- getProgName
-            hPutStrLn stderr $ "Please use one flag per call, use '" ++ progname ++ " -h' for more information"
-            exitFailure
+dataLoc :: String
+dataLoc = "/usr/share/emperor/"
