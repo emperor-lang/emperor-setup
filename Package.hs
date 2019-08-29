@@ -3,7 +3,7 @@
 
 module Package where
 
-import Data.Aeson (FromJSON, ToJSON, Value(Object), (.:), (.=), object, parseJSON, toJSON)
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Map (Map)
 import GHC.Generics (Generic)
 
@@ -18,26 +18,18 @@ data Package =
         }
     deriving (Generic, Show)
 
-data Author =
-    Author String String String
-    deriving (Show)
-
-instance ToJSON Author where
-    toJSON (Author n e u) = object ["name" .= n, "email" .= e, "url" .= u]
-
-instance FromJSON Author where
-    parseJSON (Object v) = Author <$> v .: "name" <*> v .: "email" <*> v .: "url"
-    parseJSON _ = fail "Expected object when parsing author"
+data Author = 
+    Author
+        { authorName :: String
+        , email :: String
+        , url :: String
+        }
+    deriving (Generic, Show)
 
 instance ToJSON Package
 
 instance FromJSON Package
 
-authorName :: Author -> String
-authorName (Author n _ _) = n
+instance ToJSON Author
 
-authorEmail :: Author -> String
-authorEmail (Author _ e _) = e
-
-authorURL :: Author -> String
-authorURL (Author _ _ u) = u
+instance FromJSON Author
