@@ -5,3 +5,5 @@ emperor-setup-args.*
 *_completions.sh
 docs/latex/
 docs/html/
+Args.hs
+dist/*
