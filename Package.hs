@@ -1,13 +1,21 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Package where
 
-import GHC.Generics
 import Data.Aeson (FromJSON, ToJSON, Value(Object), (.:), (.=), object, parseJSON, toJSON)
 import Data.Map (Map)
+import GHC.Generics (Generic)
 
 data Package =
-    Package { name :: String, author :: Author, dependencies :: Map String String, version :: String, files :: [String], license :: String}
+    Package
+        { name :: String
+        , author :: Author
+        , dependencies :: Map String String
+        , version :: String
+        , files :: [String]
+        , license :: String
+        }
     deriving (Generic, Show)
 
 data Author =
@@ -22,6 +30,7 @@ instance FromJSON Author where
     parseJSON _ = fail "Expected object when parsing author"
 
 instance ToJSON Package
+
 instance FromJSON Package
 
 authorName :: Author -> String
