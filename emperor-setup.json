@@ -18,6 +18,15 @@
 			"mandatory": true
 		},
 		{
+			"short": "-C",
+			"long": "--include-location",
+			"type": "flag",
+			"default": "false",
+			"mandatory": false,
+			"dest": "includeLocation",
+			"help": "Output the emperor header location"
+		},
+		{
 			"short": "-a",
 			"long": "--add-dependency",
 			"type": "flag",
