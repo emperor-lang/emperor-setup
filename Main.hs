@@ -7,7 +7,7 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
 import           Control.Monad        (when)
 import           Data.Aeson           (eitherDecode, encode)
 import           Data.ByteString.Lazy (ByteString, getContents, readFile, writeFile)
-import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, parseDependencyString)
+import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, parseDependencyString, name, version)
 import           PackageRepo          (getMostRecentVersion)
 import           Prelude              hiding (getContents, readFile, writeFile)
 import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
@@ -52,8 +52,8 @@ addDependencyAction args = do
                 Left m -> do
                     hPutStrLn stderr m
                     exitFailure
-                Right v -> return (Dependency { package = d, packageVersion = v })
-        (d, Just v) -> return (Dependency { package = d, packageVersion = v })
+                Right v -> return (Dependency { dependencyName = d, dependencyVersion = v })
+        (d, Just v) -> return (Dependency { dependencyName = d, dependencyVersion = v })
     r <- getPackageMeta args
     case r of
         Nothing -> do
@@ -99,7 +99,7 @@ installDependenciesAction' args pkg = do
         installDependenciesAction'' [] = return ()
         installDependenciesAction'' (d:ds) = do
             putStrLn $ "Installing " ++ show d
-            let dir = libLoc ++ package d ++ '/' : packageVersion d ++ "/"
+            let dir = libLoc ++ name d ++ '/' : version d ++ "/"
             e <- doesDirectoryExist dir
             when e $ removeDirectoryRecursive dir
             createDirectoryIfMissing True dir
@@ -115,7 +115,7 @@ missingDependencies (d:ds) = do
     case dsr of
         Left m -> return . Left $ m
         Right ds' -> do
-            r <- doesDirectoryExist $ libLoc ++ package d ++ '/' : packageVersion d ++ "/"
+            r <- doesDirectoryExist $ libLoc ++ name d ++ '/' : version d ++ "/"
             return . Right $ if r then ds' else d:ds'
 
 cFlagsAction :: Args -> IO ()
@@ -125,19 +125,19 @@ cFlagsAction args = do
     case r of
         Nothing -> putStrLn standardOptions
         Just p -> do
-            let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ (package d) ++ "/" ++ (packageVersion d) ++ "/") . sanitise <$> dependencies p
-            let includeLocations = unwords $ (\d -> "-I" ++ includeLoc ++ (package d) ++ "/" ++ (packageVersion d) ++ "/") . sanitise <$> dependencies p
+            let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
+            let includeLocations = unwords $ (\d -> "-I" ++ includeLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 sanitise :: Dependency -> Dependency
-sanitise d = Dependency { package = (sanitiseShellString . package) d, packageVersion = (sanitiseShellString . packageVersion) d }
+sanitise d = Dependency { dependencyName = (sanitiseShellString . name) d, dependencyVersion = (sanitiseShellString . version) d }
 
 libsAction :: Args -> IO ()
 libsAction args = do
     r <- getPackageMeta args
     case r of
         Nothing -> return ()
-        Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . package) d) <$> (dependencies) p
+        Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> (dependencies) p
 
 getPackageMeta :: Args -> IO (Maybe Package)
 getPackageMeta args =
