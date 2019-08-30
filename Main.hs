@@ -1,39 +1,41 @@
-module Main where
+{-# LANGUAGE OverloadedStrings #-}
+module Main (main) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
                                        includeLocation, input, installDependencies, libraryInstallLocation, libs,
                                        parseArgv)
 import           Data.Aeson           (eitherDecode)
-import           Data.ByteString.Lazy (readFile)
-import           Data.List            (intercalate)
+import           Data.ByteString.Lazy (ByteString, readFile)
 import           Data.Map             (assocs)
 import           Package              (Package, dependencies)
 import           Prelude              hiding (readFile, writeFile)
+import           System.Directory     (doesFileExist)
 import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
+
 
 main :: IO ()
 main = do
     args <- parseArgv
 
     -- Go through the actions, perform each if necessary
-    if addDependency args
-        then addDependencyAction args
-    else if installDependencies args
-        then installDependenciesAction args
-    else if cFlags args
-        then cFlagsAction args
-    else if libs args
-        then libsAction args
-    else if binaryInstallLocation args
-        then putStrLn binLoc
-    else if libraryInstallLocation args
-        then putStrLn libLoc
-    else if dataInstallLocation args
-        then putStrLn dataLoc
-    else if includeLocation args
-        then putStrLn includeLoc
+    if addDependency args then
+        addDependencyAction args
+    else if installDependencies args then
+        installDependenciesAction args
+    else if cFlags args then
+        cFlagsAction args
+    else if libs args then
+        libsAction args
+    else if binaryInstallLocation args then
+        putStrLn binLoc
+    else if libraryInstallLocation args then
+        putStrLn libLoc
+    else if dataInstallLocation args then
+        putStrLn dataLoc
+    else if includeLocation args then
+        putStrLn includeLoc
     else do
         progname <- getProgName
         hPutStrLn stderr $
@@ -41,31 +43,57 @@ main = do
         exitFailure
 
 addDependencyAction :: Args -> IO ()
-addDependencyAction _ = putStrLn "Adding dependency"
+addDependencyAction args = do
+    putStrLn "Adding dependency"
+    installDependenciesAction args
 
 installDependenciesAction :: Args -> IO ()
-installDependenciesAction _ = putStrLn "Installing dependencies"
+installDependenciesAction _ = putStrLn "Refreshing dependencies"
 
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
-    p <- getPackageMeta args
-    -- TODO: Fix shell injection problem here and in libsAction
+    r <- getPackageMeta args
     let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I."
-    let libraryLocations = intercalate " " $ (\(d, v) -> "-L" ++ libLoc ++ d ++ "/" ++ v ++ "/") <$> (assocs . dependencies) p
-    let includeLocations = intercalate " " $ (\(d, v) -> "-I" ++ includeLoc ++ d ++ "/" ++ v ++ "/") <$> (assocs . dependencies) p
-    putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
+    case r of
+        Nothing -> putStrLn standardOptions
+        Just p -> do
+            let libraryLocations = unwords $ (\(d, v) -> "-L" ++ libLoc ++ d ++ "/" ++ v ++ "/") . (\(d,v) -> (sanitiseShellString d, sanitiseShellString v)) <$> (assocs . dependencies) p
+            let includeLocations = unwords $ (\(d, v) -> "-I" ++ includeLoc ++ d ++ "/" ++ v ++ "/") . (\(d,v) -> (sanitiseShellString d, sanitiseShellString v)) <$> (assocs . dependencies) p
+            putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 libsAction :: Args -> IO ()
 libsAction args = do
-    p <- getPackageMeta args
-    putStrLn $ intercalate " " $ (\(d, _) -> "-l" ++ d) <$> (assocs . dependencies) p
+    r <- getPackageMeta args
+    case r of
+        Nothing -> return ()
+        Just p -> putStrLn . unwords $ (\(d, _) -> "-l" ++ sanitiseShellString d) <$> (assocs . dependencies) p
 
-getPackageMeta :: Args -> IO Package
-getPackageMeta args = do
-    c <- readFile (input args)
-    case eitherDecode c of
-        Left m -> error m
-        Right p -> return p
+getPackageMeta :: Args -> IO (Maybe Package)
+getPackageMeta args =
+    if (not . null) (input args) then do
+        c <- readFile $ input args
+        getPackageMeta' c
+    else do
+        r <- doesFileExist "./package.json"
+        if r then do
+            c <- readFile "./package.json"
+            getPackageMeta' c
+        else
+            return Nothing
+    where
+        getPackageMeta' :: ByteString -> IO (Maybe Package)
+        getPackageMeta' c = case eitherDecode c of
+            Left m -> error m
+            Right p -> return $ Just p
+
+sanitiseShellString :: String -> String
+sanitiseShellString = (replace <$>)
+    where
+        replace :: Char -> Char
+        replace '\'' = '+'
+        replace '"' = '-'
+        replace '/' = '_'
+        replace x = x
 
 binLoc :: String
 binLoc = "/usr/bin/"
