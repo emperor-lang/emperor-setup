@@ -5,15 +5,14 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
                                        includeLocation, input, installDependencies, libraryInstallLocation, libs,
                                        parseArgv)
 import           Data.Aeson           (eitherDecode)
-import           Data.ByteString.Lazy (ByteString, readFile)
+import           Data.ByteString.Lazy (ByteString, getContents, readFile)
 import           Data.Map             (assocs)
 import           Package              (Package, dependencies)
-import           Prelude              hiding (readFile, writeFile)
+import           Prelude              hiding (getContents, readFile, writeFile)
 import           System.Directory     (doesFileExist)
 import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
-
 
 main :: IO ()
 main = do
@@ -71,8 +70,12 @@ libsAction args = do
 getPackageMeta :: Args -> IO (Maybe Package)
 getPackageMeta args =
     if (not . null) (input args) then do
-        c <- readFile $ input args
-        getPackageMeta' c
+        if input args == "-" then do
+            c <- getContents
+            getPackageMeta' c
+        else do
+            c <- readFile $ input args
+            getPackageMeta' c
     else do
         r <- doesFileExist "./package.json"
         if r then do
@@ -83,7 +86,9 @@ getPackageMeta args =
     where
         getPackageMeta' :: ByteString -> IO (Maybe Package)
         getPackageMeta' c = case eitherDecode c of
-            Left m -> error m
+            Left m -> do
+                hPutStrLn stderr $ "Failed to parse json from input: " ++ m
+                exitFailure
             Right p -> return $ Just p
 
 sanitiseShellString :: String -> String
