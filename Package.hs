@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
-{-# LANGUAGE OverloadedStrings      #-}
 
 module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name) where
 
-import           Data.Aeson   (FromJSON, ToJSON, Value(Object), (.:), (.=), object, parseJSON, toJSON)
+import           Data.Aeson (FromJSON, ToJSON, Value(Object), object, parseJSON, toJSON, (.:), (.=))
 
 data Package =
     Package

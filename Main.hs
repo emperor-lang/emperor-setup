@@ -7,7 +7,8 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
 import           Control.Monad        (when)
 import           Data.Aeson           (eitherDecode, encode)
 import           Data.ByteString.Lazy (ByteString, getContents, readFile, writeFile)
-import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, parseDependencyString, name, version)
+import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, name,
+                                       parseDependencyString, version)
 import           PackageRepo          (getMostRecentVersion)
 import           Prelude              hiding (getContents, readFile, writeFile)
 import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
@@ -80,7 +81,7 @@ installDependenciesAction args = do
 installDependenciesAction' :: Args -> Package -> IO ()
 installDependenciesAction' args pkg = do
     let ds = dependencies pkg
-    sufficientPermissions <- fileAccess libLoc True True False 
+    sufficientPermissions <- fileAccess libLoc True True False
     if not sufficientPermissions then do
         pn <- getProgName
         hPutStrLn stderr $ pn ++ " has been run with insufficient permissions"
@@ -104,7 +105,7 @@ installDependenciesAction' args pkg = do
             when e $ removeDirectoryRecursive dir
             createDirectoryIfMissing True dir
 
-            
+
 
             installDependenciesAction'' ds
 
