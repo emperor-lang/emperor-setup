@@ -1,11 +1,11 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Package where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Map (Map)
-import GHC.Generics (Generic)
+import           Data.Aeson   (FromJSON, ToJSON)
+import           Data.Map     (Map)
+import           GHC.Generics (Generic)
 
 data Package =
     Package
@@ -18,7 +18,7 @@ data Package =
         }
     deriving (Generic, Show)
 
-data Author = 
+data Author =
     Author
         { authorName :: String
         , email :: String
