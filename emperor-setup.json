@@ -29,11 +29,11 @@
 		{
 			"short": "-a",
 			"long": "--add-dependency",
-			"type": "flag",
+			"type": "string",
 			"mandatory": false,
 			"dest": "addDependency",
 			"help": "Add the dependency specified by the -i flag to the current package",
-			"default": "false"
+			"default": ""
 		},
 		{
 			"short": "-I",
@@ -97,6 +97,15 @@
 			"dest": "dataInstallLocation",
 			"mandatory": false,
 			"help": "Location where data files for emperor programs may be installed (read/write)"
+		},
+		{
+			"short": "-f",
+			"long": "--force",
+			"type": "flag",
+			"default": "false",
+			"dest": "force",
+			"mandatory": false,
+			"help": "Force updates regardless of whether a dependency is already present"
 		}
 	]
 }
