@@ -1,7 +1,6 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
-module Package where
+module Package (Package(..), Author(..)) where
 
 import           Data.Aeson   (FromJSON, ToJSON)
 import           Data.Map     (Map)
