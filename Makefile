@@ -18,8 +18,8 @@ SOFT_LINK_COMMAND = [[ ! -f $@ ]] && ln -s $^ $@
 # Code up-keep commands
 LINTER := hlint
 LINTER_FLAGS := -s
-FORMATTER := hindent
-FORMATTER_FLAGS := --tab-size 4 --line-length 120
+FORMATTER := stylish-haskell
+FORMATTER_FLAGS := -i -c ./stylish-haskell.yaml
 
 COMPLETION_INSTALL_LOCATION = /usr/share/bash-completion/completions/emperor-setup
 
@@ -70,11 +70,8 @@ $(COMPLETION_INSTALL_LOCATION): ./emperor-setup_completions.sh;
 	argcompgen < $< > $@
 .DELETE_ON_ERROR: ./emperor-setup_completions.sh
 
-validate-format: ./Args.hs $(shell find . -name '*.hs')
-	$(FORMATTER) $(FORMATTER_FLAGS_VALIDATE) $^
-.PHONY: validate-format
-
-format: ./Args.hs $(shell find . -name '*.hs') ## Run the formatter on all non-generated source files
+format: $(shell find . -name '*.hs' | grep -v dist | grep -v Args) ## Run the formatter on all non-generated source files
+	@echo $(shell find . -name '*.hs' | grep -v dist | grep -v Args)
 	$(FORMATTER) $(FORMATTER_FLAGS) $^
 .PHONY: format
 
