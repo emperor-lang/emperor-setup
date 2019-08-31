@@ -1,13 +1,15 @@
 module Install (doInstallDependencies, installPackageDependencies) where
 
 import           Args             (Args, dryRun, force)
-import           Control.Monad    (when)
-import           Locations        (getDataLoc, getIncludeLoc, getLibLoc)
-import           Package          (Dependency, Package, dependencies, getPackageMeta, name, version)
+import           Control.Monad    (unless, when)
+import           Locations        (getPackageInstallLoc)
+import           Package          (Dependency, Package, dependencies, files, getPackageFromDirectory, getPackageMeta,
+                                   name, version)
 import           PackageRepo      (getPackageLocation)
-import           System.Directory (createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
+import           System.Directory (copyFileWithMetadata, createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
+                                   removeDirectoryRecursive)
 import           System.Exit      (ExitCode(..), exitFailure)
-import           System.IO        (hPutStrLn, stderr)
+import           System.IO        (hPutStr, hPutStrLn, stderr)
 import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(CreatePipe), readCreateProcessWithExitCode,
                                    readProcessWithExitCode)
 
@@ -38,14 +40,9 @@ installPackageDependencies args pkg = do
         installDependenciesAction'' (d:ds) = do
             putStrLn $ "Installing " ++ show d
 
-            libLoc <- getLibLoc
-            includeLoc <- getIncludeLoc
-            dataLoc <- getDataLoc
-
-            -- ! Do not refresh binLoc! This may have bad consequences :(
-            refreshDir $ libLoc ++ name d ++ '/' : version d ++ "/"
-            refreshDir $ includeLoc ++ name d ++ '/' : version d ++ "/"
-            refreshDir $ dataLoc ++ name d ++ '/' : version d ++ "/"
+            packageInstallLoc <- getPackageInstallLoc
+            let installDirectory = packageInstallLoc ++ name d ++ '/' : version d ++ "/"
+            refreshDir installDirectory
 
             let dependencyCloneDirectory = name d ++ '-' : version d
 
@@ -55,40 +52,56 @@ installPackageDependencies args pkg = do
                     hPutStrLn stderr m
                     exitFailure
                 Right u -> do
+                    e <- doesDirectoryExist dependencyCloneDirectory
+                    when e $ removeDirectoryRecursive dependencyCloneDirectory
+
                     putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
-                    (c, out, err) <- if not . dryRun $ args then
-                            readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
+                    (c, _, err) <- if not . dryRun $ args then
+                            readProcessWithExitCode "git" [ "clone", "--depth=1", u, dependencyCloneDirectory ] ""
                         else
                             return (ExitSuccess, "", "")
-                    print (c, out, err)
+                    hPutStr stderr err
+                    if c /= ExitSuccess then do
+                        hPutStrLn stderr $ "Failed to get dependency " ++ show d
+                        exitFailure
+                    else do
+                        mr <- doesFileExist $ dependencyCloneDirectory ++ "/manifest.json"
+                        unless mr $ do
+                            hPutStrLn stderr "Could not find manifest in downloaded source"
+                            exitFailure
 
-                    -- let gitCmd = RawCommand "make" []
-                    -- let gitProc = CreateProcess { cwd = Just dependencyCloneDirectory
-                    --     , cmdspec = gitCmd
-                    --     , env = Nothing
-                    --     , std_in = CreatePipe
-                    --     , std_err = CreatePipe
-                    --     , std_out = CreatePipe
-                    --     , close_fds = True
-                    --     , create_group = False
-                    --     , delegate_ctlc = False
-                    --     , detach_console = False
-                    --     , create_new_console = False
-                    --     , new_session = False
-                    --     , child_group = Nothing
-                    --     , child_user = Nothing
-                    --     }
-                    -- print gitCmd
-                    -- (c', out', err') <- if not . dryRun $ args then
-                    --         readCreateProcessWithExitCode gitProc ""
-                    --     else
-                    --         return (ExitSuccess, "", "")
-                    print c
-                    hPutStrLn stderr err
-                    putStrLn out
-                    -- print c'
-                    -- hPutStrLn stderr err'
-                    -- putStrLn out'
+                        let gitCmd = RawCommand "make" []
+                        let gitProc = createProcessInDirectory gitCmd dependencyCloneDirectory
+                        putStrLn "make"
+                        (c', out', err') <- if not . dryRun $ args then
+                                readCreateProcessWithExitCode gitProc ""
+                            else
+                                return (ExitSuccess, "", "")
+                        if c' /= ExitSuccess then do
+                            hPutStr stderr err'
+                            putStr out'
+                            hPutStrLn stderr $ "Running make failed for " ++ show d
+                            exitFailure
+                        else do
+                            hPutStr stderr err'
+                            putStr out'
+
+                        if dryRun args then do
+                            putStrLn "Package files would now be installed... (dry run)"
+                            putStrLn "Package files would now be cleaned... (dry run)"
+                        else do
+                            pr <- getPackageFromDirectory dependencyCloneDirectory
+                            case pr of
+                                Nothing -> do
+                                    hPutStrLn stderr $ "Could not find package manifest in " ++ show d
+                                    exitFailure
+                                Just p -> do
+                                    let fs = ((dependencyCloneDirectory ++ "/") ++) <$> files p
+                                    validateMakeResult fs
+                                    createDirectoryIfMissing True installDirectory
+                                    distributeFiles installDirectory $ zip (files p) fs
+                            hPutStrLn stderr $ "rm -rf " ++ dependencyCloneDirectory
+                            removeDirectoryRecursive dependencyCloneDirectory
 
             installDependenciesAction'' ds
         refreshDir :: String -> IO ()
@@ -97,6 +110,40 @@ installPackageDependencies args pkg = do
             when e $ removeDirectoryRecursive dir
             createDirectoryIfMissing True dir
 
+        validateMakeResult :: [FilePath] -> IO ()
+        validateMakeResult [] = return ()
+        validateMakeResult (f':fs') = do
+            e <- doesFileExist f'
+            if e then
+                validateMakeResult fs'
+            else do
+                hPutStrLn stderr $ "Compiled module did not produce file " ++ show f' ++ " as was promised by its manifest"
+                exitFailure
+
+        distributeFiles :: FilePath -> [(FilePath, FilePath)] -> IO ()
+        distributeFiles _ [] = return ()
+        distributeFiles t ((f,pf):fs) = do
+            putStrLn $ "install " ++ show pf ++ ' ' : show (t ++ f)
+            copyFileWithMetadata pf (t ++ f)
+            distributeFiles t fs
+
+createProcessInDirectory :: CmdSpec -> String -> CreateProcess
+createProcessInDirectory c d = CreateProcess { cwd = Just d
+    , cmdspec = c
+    , env = Nothing
+    , std_in = CreatePipe
+    , std_err = CreatePipe
+    , std_out = CreatePipe
+    , close_fds = True
+    , create_group = False
+    , delegate_ctlc = False
+    , detach_console = False
+    , create_new_console = False
+    , new_session = False
+    , child_group = Nothing
+    , child_user = Nothing
+    }
+
 missingDependencies :: [Dependency] -> IO (Either String [Dependency])
 missingDependencies [] = return . Right $ []
 missingDependencies (d:ds) = do
@@ -104,7 +151,7 @@ missingDependencies (d:ds) = do
     case dsr of
         Left m -> return . Left $ m
         Right ds' -> do
-            libLoc <- getLibLoc
-            r <- doesDirectoryExist $ libLoc ++ name d ++ '/' : version d ++ "/"
+            packageInstallLoc <- getPackageInstallLoc
+            r <- doesDirectoryExist $ packageInstallLoc ++ name d ++ '/' : version d ++ "/"
             return . Right $ if r then ds' else d:ds'
 
