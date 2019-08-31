@@ -2,8 +2,8 @@
 module Main (main) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
-                                       includeLocation, input, installDependencies, libraryInstallLocation, libs,
-                                       parseArgv, updatePackageRepo)
+                                       includeLocation, input, installDependencies, languageHeaderLocation,
+                                       libraryInstallLocation, libs, parseArgv, updatePackageRepo)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
 import           Install              (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies)
@@ -43,6 +43,9 @@ main = do
         putStrLn includeLoc
     else if updatePackageRepo args then
         ensurePackageRepoExists args
+    else if languageHeaderLocation args then do
+        includeInstallLoc <- getIncludeInstallLoc
+        putStrLn includeInstallLoc
     else do
         progname <- getProgName
         hPutStrLn stderr $ "Please specify a command flag\nTry '" ++ progname ++ " -h' for more information"

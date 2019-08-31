@@ -133,6 +133,15 @@
 			"dest": "updatePackageRepo",
 			"mandatory": false,
 			"help": "Update the list of known packages"
+		},
+		{
+			"short": "-#",
+			"long": "--language-header-location",
+			"type": "flag",
+			"default": "false",
+			"dest": "languageHeaderLocation",
+			"mandatory": false,
+			"help": "Output the location of the location of the language-specific C headers. These are only used by the *emperor* compiler, any headers provided by packages should be located in the directory specified by the --include-location flag, instead of -#."
 		}
 	]
 }
