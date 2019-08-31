@@ -45,7 +45,7 @@ main = do
         ensurePackageRepoExists args
     else do
         progname <- getProgName
-        hPutStrLn stderr $ "Please use one flag per call, use '" ++ progname ++ " -h' for more information"
+        hPutStrLn stderr $ "Please specify a command flag\nTry '" ++ progname ++ " -h' for more information"
         exitFailure
 
 addDependencyAction :: Args -> IO ()
