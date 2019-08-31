@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Main (main) where
+module Main (main, getPackageLocationAction, addDependencyAction, installDependenciesAction, cFlagsAction, libsAction) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
-                                       includeLocation, input, installDependencies, languageHeaderLocation,
-                                       libraryInstallLocation, libs, parseArgv, updatePackageRepo)
+                                       getPackageLocation, includeLocation, input, installDependencies,
+                                       languageHeaderLocation, libraryInstallLocation, libs, parseArgv,
+                                       updatePackageRepo)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
 import           Install              (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies)
@@ -21,7 +22,9 @@ main = do
     args <- parseArgv
 
     -- Go through the actions, perform each if necessary
-    if (not . null) (addDependency args) then
+    if (not . null) (getPackageLocation args) then
+        getPackageLocationAction args
+    else if (not . null) (addDependency args) then
         addDependencyAction args
     else if installDependencies args then
         installDependenciesAction args
@@ -50,6 +53,37 @@ main = do
         progname <- getProgName
         hPutStrLn stderr $ "Please specify a command flag\nTry '" ++ progname ++ " -h' for more information"
         exitFailure
+
+getPackageLocationAction :: Args -> IO ()
+getPackageLocationAction args = do
+        let pn = getPackageLocation args
+        r <- getPackageMeta args
+        case r of
+            Nothing -> do
+                vr <- getMostRecentVersion pn
+                case vr of
+                    Left m -> do
+                        hPutStrLn stderr m
+                        exitFailure
+                    Right v -> do
+                        getPackageLocationAction' Dependency { dependencyName = pn, dependencyVersion = v }
+
+            Just p -> do
+                let ds = filter (\d -> name d == pn) $ dependencies p
+                if null ds then do
+                    hPutStrLn stderr $ show pn ++ " is not a documented dependency of this project, please add it to the manifest with 'emperor-setup -a " ++ show pn ++ "'"
+                    exitFailure
+                else if length ds >= 2 then do
+                    hPutStrLn stderr $ "There are multiple named dependencies named " ++ show pn ++ ", please reduce this down to one"
+                    exitFailure
+                else do
+                    let d = head ds
+                    getPackageLocationAction' d
+    where
+        getPackageLocationAction' :: Dependency -> IO ()
+        getPackageLocationAction' d = do
+            packageInstallLoc <- getPackageInstallLoc
+            putStrLn $ packageInstallLoc ++ name d ++ '/' : version d ++ "/"
 
 addDependencyAction :: Args -> IO ()
 addDependencyAction args = do
