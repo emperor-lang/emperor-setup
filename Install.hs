@@ -1,11 +1,11 @@
-module Install (doInstallDependencies, installPackageDependencies) where
+module Install (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies) where
 
-import           Args             (Args, dryRun, force)
+import           Args             (Args, dryRun, force, updatePackageRepo)
 import           Control.Monad    (unless, when)
 import           Locations        (getPackageInstallLoc)
 import           Package          (Dependency, Package, dependencies, files, getPackageFromDirectory, getPackageMeta,
                                    name, version)
-import           PackageRepo      (getPackageLocation)
+import           PackageRepo      (getPackageLocation, packageRepoDefaultLocation)
 import           System.Directory (copyFileWithMetadata, createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
                                    removeDirectoryRecursive)
 import           System.Exit      (ExitCode(..), exitFailure)
@@ -15,15 +15,21 @@ import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(Cre
 
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do
+    ensurePackageRepoExists args
     r <- getPackageMeta args
     case r of
         Nothing -> do
             hPutStrLn stderr "Cannot install dependencies without dependency list"
             exitFailure
-        Just p -> installPackageDependencies args p
+        Just p -> installPackageDependencies' args p
 
 installPackageDependencies :: Args -> Package -> IO ()
 installPackageDependencies args pkg = do
+    ensurePackageRepoExists args
+    installPackageDependencies' args pkg
+
+installPackageDependencies' :: Args -> Package -> IO ()
+installPackageDependencies' args pkg = do
     let ds = dependencies pkg
     if force args then
         installDependenciesAction'' ds
@@ -65,10 +71,11 @@ installPackageDependencies args pkg = do
                         hPutStrLn stderr $ "Failed to get dependency " ++ show d
                         exitFailure
                     else do
-                        mr <- doesFileExist $ dependencyCloneDirectory ++ "/manifest.json"
-                        unless mr $ do
-                            hPutStrLn stderr "Could not find manifest in downloaded source"
-                            exitFailure
+                        unless (dryRun args) $ do
+                            mr <- doesFileExist $ dependencyCloneDirectory ++ "/manifest.json"
+                            unless mr $ do
+                                hPutStrLn stderr "Could not find manifest in downloaded source"
+                                exitFailure
 
                         let gitCmd = RawCommand "make" []
                         let gitProc = createProcessInDirectory gitCmd dependencyCloneDirectory
@@ -77,14 +84,11 @@ installPackageDependencies args pkg = do
                                 readCreateProcessWithExitCode gitProc ""
                             else
                                 return (ExitSuccess, "", "")
-                        if c' /= ExitSuccess then do
-                            hPutStr stderr err'
-                            putStr out'
+                        hPutStr stderr err'
+                        putStr out'
+                        when (c' /= ExitSuccess) $ do
                             hPutStrLn stderr $ "Running make failed for " ++ show d
                             exitFailure
-                        else do
-                            hPutStr stderr err'
-                            putStr out'
 
                         if dryRun args then do
                             putStrLn "Package files would now be installed... (dry run)"
@@ -126,6 +130,45 @@ installPackageDependencies args pkg = do
             putStrLn $ "install " ++ show pf ++ ' ' : show (t ++ f)
             copyFileWithMetadata pf (t ++ f)
             distributeFiles t fs
+
+ensurePackageRepoExists :: Args -> IO ()
+ensurePackageRepoExists args =
+        if updatePackageRepo args then
+            ensurePackageRepoExists'
+        else do
+            e <- doesFileExist packageRepoDefaultLocation
+            unless e ensurePackageRepoExists'
+    where
+        ensurePackageRepoExists' :: IO ()
+        ensurePackageRepoExists' = do
+            let cloneLocation = "./.emperor-known-packages/"
+            e' <- doesDirectoryExist cloneLocation
+            when e' $ removeDirectoryRecursive cloneLocation
+            putStrLn $ "git clone --depth=1 \"https://github.com/emperor-lang/known-packages.git\" " ++ cloneLocation
+            (c, out, err) <- if not . dryRun $ args then
+                    readProcessWithExitCode "git" [ "clone", "--depth=1", "https://github.com/emperor-lang/known-packages.git", cloneLocation ] ""
+                else
+                    return (ExitSuccess, "", "")
+            putStr out
+            hPutStr stderr err
+            if c /= ExitSuccess then do
+                hPutStrLn stderr "Failed to clone repo of known packages"
+                exitFailure
+            else do
+                let packageRepoBuildCmd = RawCommand "make" ["install"]
+                let packageRepoBuildProc = createProcessInDirectory packageRepoBuildCmd cloneLocation
+                putStrLn "make"
+                (c', out', err') <- if not . dryRun $ args then
+                        readCreateProcessWithExitCode packageRepoBuildProc ""
+                    else
+                        return (ExitSuccess, "", "")
+                putStr out'
+                hPutStr stderr err'
+                when (c' /= ExitSuccess) $ do
+                    hPutStrLn stderr "Failed to install list of known packages"
+                    exitFailure
+            e'' <- doesDirectoryExist cloneLocation
+            when e'' $ removeDirectoryRecursive cloneLocation
 
 createProcessInDirectory :: CmdSpec -> String -> CreateProcess
 createProcessInDirectory c d = CreateProcess { cwd = Just d

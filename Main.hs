@@ -3,10 +3,10 @@ module Main (main) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
                                        includeLocation, input, installDependencies, libraryInstallLocation, libs,
-                                       parseArgv)
+                                       parseArgv, updatePackageRepo)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
-import           Install              (doInstallDependencies, installPackageDependencies)
+import           Install              (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies)
 import           Locations            (getBinLoc, getIncludeInstallLoc, getPackageInstallLoc)
 import           Package              (Dependency(..), Package(dependencies), getPackageMeta, hasDependency,
                                        insertDependency, name, parseDependencyString, version)
@@ -41,6 +41,8 @@ main = do
     else if includeLocation args then do
         includeLoc <- getPackageInstallLoc
         putStrLn includeLoc
+    else if updatePackageRepo args then
+        ensurePackageRepoExists args
     else do
         progname <- getProgName
         hPutStrLn stderr $ "Please use one flag per call, use '" ++ progname ++ " -h' for more information"

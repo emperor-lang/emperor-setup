@@ -15,7 +15,7 @@
 			"help": "Input identifier (how this is used depends on the operation performed)",
 			"dest": "input",
 			"metaDest": "file",
-			"mandatory": true
+			"mandatory": false
 		},
 		{
 			"short": "-C",
@@ -115,6 +115,24 @@
 			"dest": "dryRun",
 			"mandatory": false,
 			"help": "Perform a dry run (print the commands which would be executed without running them)"
+		},
+		{
+			"short": "-e",
+			"long": "--entry-point",
+			"type": "flag",
+			"default": "false",
+			"dest": "entryPoint",
+			"mandatory": false,
+			"help": "Enforce that this is the entry-point"
+		},
+		{
+			"short": "-U",
+			"long": "--update-known-package-list",
+			"type": "flag",
+			"default": "false",
+			"dest": "updatePackageRepo",
+			"mandatory": false,
+			"help": "Update the list of known packages"
 		}
 	]
 }
