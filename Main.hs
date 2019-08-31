@@ -65,9 +65,8 @@ getPackageLocationAction args = do
                     Left m -> do
                         hPutStrLn stderr m
                         exitFailure
-                    Right v -> do
+                    Right v ->
                         getPackageLocationAction' Dependency { dependencyName = pn, dependencyVersion = v }
-
             Just p -> do
                 let ds = filter (\d -> name d == pn) $ dependencies p
                 if null ds then do
@@ -116,15 +115,25 @@ installDependenciesAction = doInstallDependencies
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
     r <- getPackageMeta args
-    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I." ++ if entryPoint args then "" else " -c"
-    case r of
-        Nothing -> putStrLn standardOptions
-        Just p -> do
-            packageInstallLoc <- getPackageInstallLoc
-            includeInstallLoc <- getIncludeInstallLoc
-            let libraryLocations = unwords $ (\d -> "-L" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
-            let includeLocations = unwords $ (["-I" ++ includeInstallLoc] ++) $ (\d -> "-I" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
+    includeInstallLoc <- getIncludeInstallLoc
+    packageInstallLoc <- getPackageInstallLoc
+    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I. -I" ++ includeInstallLoc++ (if entryPoint args then "" else " -c")
+    -- (defaultLibs, defaultHeaders) <-
+    lr <- case r of
+        Nothing -> do
+            sr <- getDefaultDependencies
+            case sr of
+                Right ls -> return $ Right ls
+                Left m -> return $ Left m
+        Just p -> return . Right $ dependencies p
+    case lr of
+        Right ls -> do
+            let libraryLocations = unwords $ (\d -> "-L" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> ls
+            let includeLocations = unwords $ (\d -> "-I" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> ls
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
+        Left m -> do
+            hPutStrLn stderr m
+            exitFailure
 
 sanitise :: Dependency -> Dependency
 sanitise d = Dependency { dependencyName = (sanitiseShellString . name) d, dependencyVersion = (sanitiseShellString . version) d }
@@ -132,9 +141,29 @@ sanitise d = Dependency { dependencyName = (sanitiseShellString . name) d, depen
 libsAction :: Args -> IO ()
 libsAction args = do
     r <- getPackageMeta args
-    case r of
-        Nothing -> return ()
-        Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> dependencies p
+    dsr <- case r of
+        Nothing -> getDefaultDependencies
+        Just p -> return . Right $ dependencies p
+    case dsr of
+        Left m -> do
+            hPutStrLn stderr m
+            exitFailure
+        Right ds -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> ds
+
+getDefaultDependencies :: IO (Either String [Dependency])
+getDefaultDependencies = getDefaultDependencies' ["std"]
+    where
+        getDefaultDependencies' :: [String] -> IO (Either String [Dependency])
+        getDefaultDependencies' [] = return . Right $ []
+        getDefaultDependencies' (s:ss) = do
+            vr <- getMostRecentVersion s
+            case vr of
+                Left m -> return . Left $ m
+                Right v -> do
+                    rs <- getDefaultDependencies' ss
+                    case rs of
+                        Left m -> return . Left $ m
+                        Right ds -> return . Right $ Dependency s v : ds
 
 writePackageMeta :: Args -> Package -> IO ()
 writePackageMeta args p = do
