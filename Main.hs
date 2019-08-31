@@ -1,22 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation, force,
+import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
                                        includeLocation, input, installDependencies, libraryInstallLocation, libs,
                                        parseArgv)
-import           Control.Monad        (when)
-import           Data.Aeson           (eitherDecode, encode)
-import           Data.ByteString.Lazy (ByteString, getContents, readFile, writeFile)
+import           Install              (doInstallDependencies, installPackageDependencies)
+import           Data.Aeson           (encode)
+import           Data.ByteString.Lazy (writeFile)
+import           Locations (binLoc, includeLoc, dataLoc, libLoc) 
 import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, name,
-                                       parseDependencyString, version)
+                                       parseDependencyString, version, getPackageMeta)
 import           PackageRepo          (getMostRecentVersion)
 import           Prelude              hiding (getContents, readFile, writeFile)
-import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
-                                       removeDirectoryRecursive)
 import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
-import           System.Posix.Files   (fileAccess)
 
 main :: IO ()
 main = do
@@ -67,57 +65,10 @@ addDependencyAction args = do
             else do
                 putStrLn $ "Adding dependency " ++ show dep
                 writePackageMeta args $ insertDependency p dep
-                installDependenciesAction' args p
+                installPackageDependencies args p
 
 installDependenciesAction :: Args -> IO ()
-installDependenciesAction args = do
-    r <- getPackageMeta args
-    case r of
-        Nothing -> do
-            hPutStrLn stderr "Cannot install dependencies without dependency list"
-            exitFailure
-        Just p -> installDependenciesAction' args p
-
-installDependenciesAction' :: Args -> Package -> IO ()
-installDependenciesAction' args pkg = do
-    let ds = dependencies pkg
-    sufficientPermissions <- fileAccess libLoc True True False
-    if not sufficientPermissions then do
-        pn <- getProgName
-        hPutStrLn stderr $ pn ++ " has been run with insufficient permissions"
-        exitFailure
-    else if force args then do
-        installDependenciesAction'' ds
-    else do
-        mdsr <- missingDependencies ds
-        case mdsr of
-            Left m -> do
-                hPutStrLn stderr m
-                exitFailure
-            Right mds -> installDependenciesAction'' mds
-    where
-        installDependenciesAction'' :: [Dependency] -> IO ()
-        installDependenciesAction'' [] = return ()
-        installDependenciesAction'' (d:ds) = do
-            putStrLn $ "Installing " ++ show d
-            let dir = libLoc ++ name d ++ '/' : version d ++ "/"
-            e <- doesDirectoryExist dir
-            when e $ removeDirectoryRecursive dir
-            createDirectoryIfMissing True dir
-
-
-
-            installDependenciesAction'' ds
-
-missingDependencies :: [Dependency] -> IO (Either String [Dependency])
-missingDependencies [] = return . Right $ []
-missingDependencies (d:ds) = do
-    dsr <- missingDependencies ds
-    case dsr of
-        Left m -> return . Left $ m
-        Right ds' -> do
-            r <- doesDirectoryExist $ libLoc ++ name d ++ '/' : version d ++ "/"
-            return . Right $ if r then ds' else d:ds'
+installDependenciesAction = doInstallDependencies
 
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
@@ -191,15 +142,3 @@ sanitiseShellString = (replace <$>)
         replace '>' = '_'
         replace '<' = '_'
         replace x = x
-
-binLoc :: String
-binLoc = "/usr/bin/"
-
-libLoc :: String
-libLoc = "./" -- "/usr/lib/emperor/"
-
-includeLoc :: String
-includeLoc = "/usr/include/emperor/"
-
-dataLoc :: String
-dataLoc = "/usr/share/emperor/"
