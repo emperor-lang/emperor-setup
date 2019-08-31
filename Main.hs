@@ -7,7 +7,7 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
 import           Install              (doInstallDependencies, installPackageDependencies)
-import           Locations            (getBinLoc, getDataLoc, getIncludeLoc, getLibLoc)
+import           Locations            (getBinLoc, getIncludeInstallLoc, getPackageInstallLoc)
 import           Package              (Dependency(..), Package(dependencies), getPackageMeta, hasDependency,
                                        insertDependency, name, parseDependencyString, version)
 import           PackageRepo          (getMostRecentVersion)
@@ -33,13 +33,13 @@ main = do
         binLoc <- getBinLoc
         putStrLn binLoc
     else if libraryInstallLocation args then do
-        libLoc <- getLibLoc
+        libLoc <- getPackageInstallLoc
         putStrLn libLoc
     else if dataInstallLocation args then do
-        dataLoc <- getDataLoc
+        dataLoc <- getPackageInstallLoc
         putStrLn dataLoc
     else if includeLocation args then do
-        includeLoc <- getIncludeLoc
+        includeLoc <- getPackageInstallLoc
         putStrLn includeLoc
     else do
         progname <- getProgName
