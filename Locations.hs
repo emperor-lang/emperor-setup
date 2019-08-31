@@ -1,6 +1,6 @@
 module Locations (getBinLoc, getLibLoc, getIncludeLoc, getDataLoc) where
 
-import System.Directory (getHomeDirectory)
+import           System.Directory (getHomeDirectory)
 
 getBinLoc :: IO String
 getBinLoc = do

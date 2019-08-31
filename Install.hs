@@ -1,15 +1,15 @@
 module Install (doInstallDependencies, installPackageDependencies) where
 
-import Args (Args, force, dryRun)
-import Control.Monad (when)
-import Locations (getDataLoc, getIncludeLoc, getLibLoc)
-import Package (Package, Dependency, dependencies, getPackageMeta, name, version)
-import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist,
-                                       removeDirectoryRecursive)
-import           System.Exit          (ExitCode(..), exitFailure)
-import           System.IO            (hPutStrLn, stderr)
-import System.Process (CreateProcess(..), CmdSpec(..), StdStream(CreatePipe), readCreateProcessWithExitCode, readProcessWithExitCode)
-import PackageRepo (getPackageLocation)
+import           Args             (Args, dryRun, force)
+import           Control.Monad    (when)
+import           Locations        (getDataLoc, getIncludeLoc, getLibLoc)
+import           Package          (Dependency, Package, dependencies, getPackageMeta, name, version)
+import           PackageRepo      (getPackageLocation)
+import           System.Directory (createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
+import           System.Exit      (ExitCode(..), exitFailure)
+import           System.IO        (hPutStrLn, stderr)
+import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(CreatePipe), readCreateProcessWithExitCode,
+                                   readProcessWithExitCode)
 
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do

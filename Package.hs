@@ -7,13 +7,14 @@
 
 module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackageMeta) where
 
-import Args (Args, input)
-import           Data.Aeson (FromJSON, ToJSON, Value(Object), object, parseJSON, toJSON, (.:), (.=), eitherDecode)
+import           Args                 (Args, input)
+import           Data.Aeson           (FromJSON, ToJSON, Value(Object), eitherDecode, object, parseJSON, toJSON, (.:),
+                                       (.=))
 import           Data.ByteString.Lazy (ByteString, getContents, readFile)
-import           Prelude hiding (getContents, readFile)
+import           Prelude              hiding (getContents, readFile)
+import           System.Directory     (doesFileExist)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
-import           System.Directory     (doesFileExist)
 
 
 data Package =

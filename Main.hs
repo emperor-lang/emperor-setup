@@ -4,12 +4,12 @@ module Main (main) where
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
                                        includeLocation, input, installDependencies, libraryInstallLocation, libs,
                                        parseArgv)
-import           Install              (doInstallDependencies, installPackageDependencies)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
-import           Locations (getBinLoc, getIncludeLoc, getDataLoc, getLibLoc) 
-import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, name,
-                                       parseDependencyString, version, getPackageMeta)
+import           Install              (doInstallDependencies, installPackageDependencies)
+import           Locations            (getBinLoc, getDataLoc, getIncludeLoc, getLibLoc)
+import           Package              (Dependency(..), Package(dependencies), getPackageMeta, hasDependency,
+                                       insertDependency, name, parseDependencyString, version)
 import           PackageRepo          (getMostRecentVersion)
 import           Prelude              hiding (getContents, readFile, writeFile)
 import           System.Environment   (getProgName)
