@@ -2,7 +2,7 @@ module Install (doInstallDependencies, installPackageDependencies) where
 
 import Args (Args, force)
 import Control.Monad (when)
-import Locations (libLoc)
+import Locations (dataLoc, includeLoc, libLoc)
 import Package (Package, Dependency, dependencies, getPackageMeta, name, version)
 import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist,
                                        removeDirectoryRecursive)
@@ -10,7 +10,8 @@ import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
 import           System.Posix.Files   (fileAccess)
-import System.Process (readProcessWithExitCode)
+import System.Process (CreateProcess(..), CmdSpec(..), StdStream(CreatePipe), readCreateProcessWithExitCode, readProcessWithExitCode)
+import PackageRepo (getPackageLocation)
 
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do
@@ -50,18 +51,44 @@ installPackageDependencies args pkg = do
 
             let dependencyCloneDirectory = name d ++ '-' : version d
 
-            r <- getPackageLocation $ name d $ version d
+            r <- getPackageLocation (name d) (version d)
             case r of
                 Left m -> do
                     hPutStrLn stderr m
                     exitFailure
-                Right u ->
-                    readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
+                Right u -> do
+                    putStrLn $ "git " ++ show [ "clone", u, dependencyCloneDirectory ]
+                    (c, out, err) <- readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
 
+                    let gitCmd = RawCommand "pwd" [] -- [ "clone", u, dependencyCloneDirectory ]
+                    let gitProc = CreateProcess { cwd = Just dependencyCloneDirectory
+                        , cmdspec = gitCmd
+                        , env = Nothing
+                        , std_in = CreatePipe
+                        , std_err = CreatePipe
+                        , std_out = CreatePipe
+                        , close_fds = True
+                        , create_group = False
+                        , delegate_ctlc = False
+                        , detach_console = False
+                        , create_new_console = False
+                        , new_session = False
+                        , child_group = Nothing
+                        , child_user = Nothing
+                        }
+                    (c', out', err') <- readCreateProcessWithExitCode gitProc ""
+                    print gitCmd
+                    print gitProc
+                    print c
+                    hPutStrLn stderr err
+                    putStrLn out
+                    print c'
+                    hPutStrLn stderr err'
+                    putStrLn out'
 
             installDependenciesAction'' ds
         refreshDir :: String -> IO ()
-        refreshDir dir' = do
+        refreshDir dir = do
             e <- doesDirectoryExist dir
             when e $ removeDirectoryRecursive dir
             createDirectoryIfMissing True dir
