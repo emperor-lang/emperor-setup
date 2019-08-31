@@ -3,10 +3,47 @@
 	"program": "emperor-setup",
 	"version": "1.0.0",
 	"date": "03/07/2019",
-	"bugs": "Please file any bugs or issues at <github.com/argspec/arggen>",
-	"author": "This is maintained by Edward Jones, source code is available at <github.com/argspec/arggen>",
+	"bugs": "Please file any bugs or issues at <github.com/emperor-lang/emperor-setup/issues>",
+	"author": "This is maintained by Edward Jones, source code is available at <github.com/emperor-lang/emperor-setup>",
 	"licence": "Copyright (c) 2019, Edward Jones\n\n%%%%%%LICENSE_START(GPLv2+_DOC_FULL)\nThis is free documentation; you can redistribute it and/or\nmodify it under the terms of the GNU General Public License as\npublished by the Free Software Foundation; either version 2 of\nthe License, or (at your option) any later version.\n\nThe GNU General Public License's references to \"object code\"\nand \"executables\" are to be interpreted as the output of any\ndocument formatting or typesetting system, including\nintermediate and printed output.\n\nThis manual is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\nGNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public\nLicense along with this manual; if not, see\n<http://www.gnu.org/licenses/>.\n%%%%%%LICENSE_END",
 	"args": [
+		{
+			"short": "-i",
+			"long": "--input",
+			"type": "string",
+			"default": "",
+			"help": "Input identifier (how this is used depends on the operation performed)",
+			"dest": "input",
+			"metaDest": "file",
+			"mandatory": false
+		},
+		{
+			"short": "-C",
+			"long": "--include-location",
+			"type": "flag",
+			"default": "false",
+			"mandatory": false,
+			"dest": "includeLocation",
+			"help": "Output the emperor header location"
+		},
+		{
+			"short": "-a",
+			"long": "--add-dependency",
+			"type": "string",
+			"mandatory": false,
+			"dest": "addDependency",
+			"help": "Add the dependency specified by the -i flag to the current package",
+			"default": ""
+		},
+		{
+			"short": "-I",
+			"long": "--install-dependencies",
+			"type": "flag",
+			"default": "false",
+			"mandatory": false,
+			"dest": "installDependencies",
+			"help": "Install the dependencies of the current project"
+		},
 		{
 			"short": "-h",
 			"long": "--help",
@@ -26,7 +63,7 @@
 			"dest": "cFlags"
 		},
 		{
-			"short" : "-l",
+			"short": "-l",
 			"long": "--libs",
 			"type": "flag",
 			"mandatory": false,
@@ -60,6 +97,42 @@
 			"dest": "dataInstallLocation",
 			"mandatory": false,
 			"help": "Location where data files for emperor programs may be installed (read/write)"
+		},
+		{
+			"short": "-f",
+			"long": "--force",
+			"type": "flag",
+			"default": "false",
+			"dest": "force",
+			"mandatory": false,
+			"help": "Force updates regardless of whether a dependency is already present"
+		},
+		{
+			"short": "-d",
+			"long": "--dry-run",
+			"type": "flag",
+			"default": "false",
+			"dest": "dryRun",
+			"mandatory": false,
+			"help": "Perform a dry run (print the commands which would be executed without running them)"
+		},
+		{
+			"short": "-e",
+			"long": "--entry-point",
+			"type": "flag",
+			"default": "false",
+			"dest": "entryPoint",
+			"mandatory": false,
+			"help": "Enforce that this is the entry-point"
+		},
+		{
+			"short": "-U",
+			"long": "--update-known-package-list",
+			"type": "flag",
+			"default": "false",
+			"dest": "updatePackageRepo",
+			"mandatory": false,
+			"help": "Update the list of known packages"
 		}
 	]
 }
