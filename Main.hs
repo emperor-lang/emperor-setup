@@ -78,7 +78,7 @@ cFlagsAction args = do
         Nothing -> putStrLn standardOptions
         Just p -> do
             let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
-            let includeLocations = unwords $ [includeLoc ++ "/banned/"] ++ $ (\d -> "-I" ++ includeLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
+            let includeLocations = unwords $ (("-I" ++ includeLoc) : ("-I" ++ includeLoc ++ "banned/"):) $ (\d -> "-I" ++ includeLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 sanitise :: Dependency -> Dependency
