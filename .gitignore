@@ -7,3 +7,4 @@ docs/latex/
 docs/html/
 Args.hs
 dist/*
+test/
