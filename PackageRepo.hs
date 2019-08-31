@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module PackageRepo (getMostRecentVersion, getPackageLocation) where
+module PackageRepo (getMostRecentVersion, getPackageLocation, packageRepoDefaultLocation) where
 
 import           Data.Aeson           (FromJSON, eitherDecode)
 import           Data.ByteString.Lazy (readFile)
