@@ -6,6 +6,30 @@
 	"bugs": "Please file any bugs or issues at <github.com/emperor-lang/emperor-setup/issues>",
 	"author": "This is maintained by Edward Jones, source code is available at <github.com/emperor-lang/emperor-setup>",
 	"licence": "Copyright (c) 2019, Edward Jones\n\n%%%%%%LICENSE_START(GPLv2+_DOC_FULL)\nThis is free documentation; you can redistribute it and/or\nmodify it under the terms of the GNU General Public License as\npublished by the Free Software Foundation; either version 2 of\nthe License, or (at your option) any later version.\n\nThe GNU General Public License's references to \"object code\"\nand \"executables\" are to be interpreted as the output of any\ndocument formatting or typesetting system, including\nintermediate and printed output.\n\nThis manual is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\nGNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public\nLicense along with this manual; if not, see\n<http://www.gnu.org/licenses/>.\n%%%%%%LICENSE_END",
+	"description": "Emperor package manager",
+	"longDescription": "This is the package manager for the Emperor language. It handles the installation, maintenance and usage of packages used by programs written using the emperor language. Where necessary it will download and compile any necessary files.\nPackages are installed in to a folder in the user's directories (e.g. ~/.emperor/packages) hence it does not require root user permissions to operate.",
+	"examples": [
+		{
+			"input": "emperor-setup -I",
+			"description": "Install dependencies"
+		},
+		{
+			"input": "emperor-setup -a pkg",
+			"description": "Add package 'pkg' to the dependency list at the most recent known version"
+		},
+		{
+			"input": "emperor-setup -a pkg:1.2.3",
+			"description": "Add package 'pkg' to the dependency list at version '1.2.3'"
+		},
+		{
+			"input": "emperor-setup -U",
+			"description": "Update the list of known packages"
+		},
+		{
+			"input": "gcc-8 $(emperor-setup -ce) program.c -o program $(emperor-setup -l)",
+			"description": "Compile 'program.c' with the emperor packages of the current directory, and that program.c is the entry-point"
+		}
+	],
 	"args": [
 		{
 			"short": "-i",
@@ -32,6 +56,7 @@
 			"type": "string",
 			"mandatory": false,
 			"dest": "addDependency",
+			"metaDest": "pkg",
 			"help": "Add the dependency specified by the -i flag to the current package",
 			"default": ""
 		},
@@ -150,7 +175,8 @@
 			"default": "",
 			"dest": "getPackageLocation",
 			"mandatory": false,
-			"help": "Output the location of a particular package"
+			"help": "Output the location of a particular package",
+			"metaDest": "pkg"
 		}
 	]
 }
