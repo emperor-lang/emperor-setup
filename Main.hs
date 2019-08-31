@@ -2,7 +2,7 @@
 module Main (main, getPackageLocationAction, addDependencyAction, installDependenciesAction, cFlagsAction, libsAction) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
-                                       getPackageLocation, includeLocation, input, installDependencies,
+                                       entryPoint, getPackageLocation, includeLocation, input, installDependencies,
                                        languageHeaderLocation, libraryInstallLocation, libs, parseArgv,
                                        updatePackageRepo)
 import           Data.Aeson           (encode)
@@ -116,7 +116,7 @@ installDependenciesAction = doInstallDependencies
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
     r <- getPackageMeta args
-    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I."
+    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I." ++ if entryPoint args then "" else " -c"
     case r of
         Nothing -> putStrLn standardOptions
         Just p -> do
