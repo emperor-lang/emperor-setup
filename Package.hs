@@ -5,9 +5,16 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 
-module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name) where
+module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackageMeta) where
 
-import           Data.Aeson (FromJSON, ToJSON, Value(Object), object, parseJSON, toJSON, (.:), (.=))
+import Args (Args, input)
+import           Data.Aeson (FromJSON, ToJSON, Value(Object), object, parseJSON, toJSON, (.:), (.=), eitherDecode)
+import           Data.ByteString.Lazy (ByteString, getContents, readFile)
+import           Prelude hiding (getContents, readFile)
+import           System.Exit          (exitFailure)
+import           System.IO            (hPutStrLn, stderr)
+import           System.Directory     (doesFileExist)
+
 
 data Package =
     Package
@@ -92,3 +99,27 @@ parseDependencyString (s:ss)
     | otherwise = (s:p, v)
         where
             (p,v) = parseDependencyString ss
+
+getPackageMeta :: Args -> IO (Maybe Package)
+getPackageMeta args =
+    if (not . null) (input args) then do
+        if input args == "-" then do
+            c <- getContents
+            getPackageMeta' c
+        else do
+            c <- readFile $ input args
+            getPackageMeta' c
+    else do
+        r <- doesFileExist "./package.json"
+        if r then do
+            c <- readFile "./package.json"
+            getPackageMeta' c
+        else
+            return Nothing
+    where
+        getPackageMeta' :: ByteString -> IO (Maybe Package)
+        getPackageMeta' c = case eitherDecode c of
+            Left m -> do
+                hPutStrLn stderr $ "Failed to parse json from input: " ++ m
+                exitFailure
+            Right p -> return $ Just p

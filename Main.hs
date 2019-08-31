@@ -91,30 +91,6 @@ libsAction args = do
         Nothing -> return ()
         Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> (dependencies) p
 
-getPackageMeta :: Args -> IO (Maybe Package)
-getPackageMeta args =
-    if (not . null) (input args) then do
-        if input args == "-" then do
-            c <- getContents
-            getPackageMeta' c
-        else do
-            c <- readFile $ input args
-            getPackageMeta' c
-    else do
-        r <- doesFileExist "./package.json"
-        if r then do
-            c <- readFile "./package.json"
-            getPackageMeta' c
-        else
-            return Nothing
-    where
-        getPackageMeta' :: ByteString -> IO (Maybe Package)
-        getPackageMeta' c = case eitherDecode c of
-            Left m -> do
-                hPutStrLn stderr $ "Failed to parse json from input: " ++ m
-                exitFailure
-            Right p -> return $ Just p
-
 writePackageMeta :: Args -> Package -> IO ()
 writePackageMeta args p = do
     let c = encode p
