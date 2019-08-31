@@ -106,6 +106,15 @@
 			"dest": "force",
 			"mandatory": false,
 			"help": "Force updates regardless of whether a dependency is already present"
+		},
+		{
+			"short": "-d",
+			"long": "--dry-run",
+			"type": "flag",
+			"default": "false",
+			"dest": "dryRun",
+			"mandatory": false,
+			"help": "Perform a dry run (print the commands which would be executed without running them)"
 		}
 	]
 }
