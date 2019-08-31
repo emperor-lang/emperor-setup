@@ -86,6 +86,8 @@ open-doc: dist/doc/html/emperor-setup/emperor-setup/index.html ## Open the docum
 	$(OPEN) $<
 .PHONY: open-doc
 
+dist/doc/html/emperor-setup/emperor-setup/index.html: $(shell find . -name '*.hs') ./Args.hs
+
 dist/doc/html/emperor-setup/emperor-setup/index.html: $(SOURCE_FILES)
 	cabal haddock --executables
 

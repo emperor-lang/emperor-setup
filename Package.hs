@@ -3,7 +3,19 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
+{-|
+Module      : Package
+Description : Data-types to represent emperor packages
+Copyright   : (c) Edward Jones, 2019
+License     : GPL-3
+Maintainer  : Edward Jones
+Stability   : experimental
+Portability : POSIX
+Language    : Haskell2010
 
+Defines data types to represent and manipulate emperor packages. Defines
+functions to translate packages in to JSON and back.
+-}
 module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackage, getPackageFromDirectory, getPackageMeta) where
 
 import           Args                 (Args, input)
@@ -15,7 +27,7 @@ import           System.Directory     (doesFileExist)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
 
-
+-- | Defines an emperor package
 data Package =
     Package
         { packageName :: String
@@ -27,6 +39,7 @@ data Package =
         }
     deriving (Show)
 
+-- | An author of an emperor package
 data Author =
     Author
         { authorName :: String
@@ -35,13 +48,16 @@ data Author =
         }
     deriving (Show)
 
+-- | A dependency of a given package
 data Dependency =
     Dependency
         { dependencyName :: String
         , dependencyVersion :: String
         }
 
+-- | Defines data items which have a version
 class HasVersion a t | a -> t where
+    -- | Obtain the version of a specified data item
     version :: a -> t
 
 instance HasVersion Package String where
@@ -50,7 +66,9 @@ instance HasVersion Package String where
 instance HasVersion Dependency String where
     version = dependencyVersion
 
+-- | Defines data items which have a name
 class HasName a t | a -> t where
+    -- | Obtain the name of a specified data item
     name :: a -> t
 
 instance HasName Package String where
@@ -86,12 +104,15 @@ instance FromJSON Dependency where
     parseJSON (Object v) = Dependency <$> v .: "name" <*> v .: "version"
     parseJSON _ = fail "Expected object when parsing dependency"
 
+-- | Returns whether a given package depends on some version of a given dependency
 hasDependency :: Package -> Dependency -> Bool
 hasDependency p d = (not . null) $ filter (== name d) $ name <$> dependencies p
 
+-- | Adds a dependency to the list associated with a package
 insertDependency :: Package -> Dependency -> Package
 insertDependency p d = p { dependencies = d : dependencies p}
 
+-- | Parse a dependency string in to a package name and maybe a version
 parseDependencyString :: String -> (String, Maybe String)
 parseDependencyString [] = ([], Nothing)
 parseDependencyString (s:ss)
@@ -100,9 +121,11 @@ parseDependencyString (s:ss)
         where
             (p,v) = parseDependencyString ss
 
+-- | Obtain the package located at a given directory
 getPackageFromDirectory :: FilePath -> IO (Maybe Package)
 getPackageFromDirectory d = getPackage $ d ++ (if last d == '/' then "" else "/") ++ "manifest.json"
 
+-- | Get the package specified by a given manifest
 getPackage :: FilePath -> IO (Maybe Package)
 getPackage f = do
         r <- doesFileExist f
@@ -112,6 +135,7 @@ getPackage f = do
         else
             return Nothing
 
+-- | Obtain the package given by the command-line arguments
 getPackageMeta :: Args -> IO (Maybe Package)
 getPackageMeta args =
     if (not . null) (input args) then
@@ -123,6 +147,7 @@ getPackageMeta args =
     else
         getPackage "./manifest.json"
 
+-- | Parse a byte-string in to a package
 getPackageMeta' :: ByteString -> IO (Maybe Package)
 getPackageMeta' c = case eitherDecode c of
     Left m -> do

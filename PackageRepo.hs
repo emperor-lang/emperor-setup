@@ -1,5 +1,16 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-|
+Module      : PackageRepo
+Description : Describes the known package repository on disk
+Copyright   : (c) Edward Jones, 2019
+License     : GPL-3
+Maintainer  : Edward Jones
+Stability   : experimental
+Portability : POSIX
+Language    : Haskell2010
 
+Provides functions to define and operate upon the known package list
+-}
 module PackageRepo (getMostRecentVersion, getPackageLocation, packageRepoDefaultLocation) where
 
 import           Data.Aeson           (FromJSON, eitherDecode)
@@ -8,12 +19,15 @@ import           GHC.Generics         (Generic)
 import           Prelude              hiding (readFile)
 import           System.Directory     (doesFileExist)
 
+-- | Defines the package repository
 newtype PackageRepo = PackageRepo [PackageRepoRecord]
     deriving (Generic, Show)
 
+-- | Returns a list of packages present in a given repo
 packages :: PackageRepo -> [PackageRepoRecord]
 packages (PackageRepo ps) = ps
 
+-- | Describes a single item in the package repository
 data PackageRepoRecord =
     PackageRepoRecord
         { package :: String
@@ -26,12 +40,15 @@ instance FromJSON PackageRepo
 
 instance FromJSON PackageRepoRecord
 
+-- | Package repo records are ordered by their versions
 instance Ord PackageRepoRecord where
     p <= p' = version p <= version p'
 
+-- | Return the location where the package repository is expected to be found
 packageRepoDefaultLocation :: String
 packageRepoDefaultLocation = "/usr/share/emperor/packages.json"
 
+-- | Get the location where a given package at a specified version should be found on disk
 getPackageLocation :: String -> String -> IO (Either String String)
 getPackageLocation p v = do
     pr <- getPackages
@@ -47,6 +64,7 @@ getPackageLocation p v = do
                 _ -> error "Managed to get a non-unique number of packages after checking cases?"
         Left m -> return $ Left m
 
+-- | Return the mst up-to-date known version of a specified package
 getMostRecentVersion :: String -> IO (Either String String)
 getMostRecentVersion p = do
     pr <- getPackages
@@ -59,6 +77,7 @@ getMostRecentVersion p = do
                 return . Right $ (version . maximum) vs
         Left m -> return $ Left m
 
+-- | Get the package repo
 getPackages :: IO (Either String PackageRepo)
 getPackages = do
     lr <- doesFileExist packageRepoDefaultLocation

@@ -1,4 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+Module      : Main
+Description : Entry-point for the emperor package manager
+Copyright   : (c) Edward Jones, 2019
+License     : GPL-3
+Maintainer  : Edward Jones
+Stability   : experimental
+Portability : POSIX
+Language    : Haskell2010
+
+This is the emperor package manager, responsible for fetching, compiling,
+installing and resolving dependencies. A list of locations where emperor files
+may be found can be obtained through the various command-line options.
+
+The most important output---that which resolves dependencies---is given as a set
+of GCC flags.
+-}
 module Main (main, getPackageLocationAction, addDependencyAction, installDependenciesAction, cFlagsAction, libsAction) where
 
 import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
@@ -17,6 +34,7 @@ import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
 
+-- | Entry point, parses commandline arguments and outputs as necessary
 main :: IO ()
 main = do
     args <- parseArgv
@@ -54,6 +72,7 @@ main = do
         hPutStrLn stderr $ "Please specify a command flag\nTry '" ++ progname ++ " -h' for more information"
         exitFailure
 
+-- | Pring the location on disc of a package specified by a @-g@ command
 getPackageLocationAction :: Args -> IO ()
 getPackageLocationAction args = do
         let pn = getPackageLocation args
@@ -84,6 +103,7 @@ getPackageLocationAction args = do
             packageInstallLoc <- getPackageInstallLoc
             putStrLn $ packageInstallLoc ++ name d ++ '/' : version d ++ "/"
 
+-- | Add a package specified by a @-a@ option to the list of dependencies in the current package
 addDependencyAction :: Args -> IO ()
 addDependencyAction args = do
     dep <- case parseDependencyString $ addDependency args of
@@ -109,9 +129,11 @@ addDependencyAction args = do
                 writePackageMeta args $ insertDependency p dep
                 installPackageDependencies args p
 
+-- | Install the dependencies specified in the manifest
 installDependenciesAction :: Args -> IO ()
 installDependenciesAction = doInstallDependencies
 
+-- | Output the GCC flags required to compile the package
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
     r <- getPackageMeta args
@@ -135,9 +157,11 @@ cFlagsAction args = do
             hPutStrLn stderr m
             exitFailure
 
+-- | Make a dependency safe to use on the commandline
 sanitise :: Dependency -> Dependency
 sanitise d = Dependency { dependencyName = (sanitiseShellString . name) d, dependencyVersion = (sanitiseShellString . version) d }
 
+-- | Output the libraries required by the package
 libsAction :: Args -> IO ()
 libsAction args = do
     r <- getPackageMeta args
@@ -150,6 +174,8 @@ libsAction args = do
             exitFailure
         Right ds -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> ds
 
+-- | Obtain a list of default dependencies (with their versions) to be used when a manifest.json has neither been
+-- specified nor found.
 getDefaultDependencies :: IO (Either String [Dependency])
 getDefaultDependencies = getDefaultDependencies' ["std"]
     where
@@ -165,6 +191,7 @@ getDefaultDependencies = getDefaultDependencies' ["std"]
                         Left m -> return . Left $ m
                         Right ds -> return . Right $ Dependency s v : ds
 
+-- | Output a JSON representation of the package
 writePackageMeta :: Args -> Package -> IO ()
 writePackageMeta args p = do
     let c = encode p

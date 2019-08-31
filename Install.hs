@@ -1,3 +1,16 @@
+{-|
+Module      : Install
+Description : Package installer for the emperor package manager
+Copyright   : (c) Edward Jones, 2019
+License     : GPL-3
+Maintainer  : Edward Jones
+Stability   : experimental
+Portability : POSIX
+Language    : Haskell2010
+
+This installs dependencies of a package and where necessary will download a list
+of the available packages.
+-}
 module Install (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies) where
 
 import           Args             (Args, dryRun, force, updatePackageRepo)
@@ -12,7 +25,7 @@ import           System.Exit      (ExitCode(..), exitFailure)
 import           System.IO        (hPutStr, hPutStrLn, stderr)
 import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(CreatePipe), readCreateProcessWithExitCode,
                                    readProcessWithExitCode)
-
+-- | Install the dependencies required by the command-line arguments
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do
     ensurePackageRepoExists args
@@ -23,11 +36,14 @@ doInstallDependencies args = do
             exitFailure
         Just p -> installPackageDependencies' args p
 
+-- | Install the dependencies of a given package
 installPackageDependencies :: Args -> Package -> IO ()
 installPackageDependencies args pkg = do
     ensurePackageRepoExists args
     installPackageDependencies' args pkg
 
+-- | Install the dependencies of a given package, under the assumption that the
+-- package repository already exists
 installPackageDependencies' :: Args -> Package -> IO ()
 installPackageDependencies' args pkg = do
     let ds = dependencies pkg
@@ -131,6 +147,7 @@ installPackageDependencies' args pkg = do
             copyFileWithMetadata pf (t ++ f)
             distributeFiles t fs
 
+-- | Installs the package repository if necessary
 ensurePackageRepoExists :: Args -> IO ()
 ensurePackageRepoExists args =
         if updatePackageRepo args then
