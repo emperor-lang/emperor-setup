@@ -10,14 +10,14 @@ getBinLoc = do
 getLibLoc :: IO String
 getLibLoc = do
     h <- getHomeDirectory
-    return $ h ++ "/.emperor/lib/" -- "/usr/lib/emperor/"
+    return $ h ++ "/.emperor/packages/"-- "/usr/lib/emperor/"
 
 getIncludeLoc :: IO String
 getIncludeLoc = do
     h <- getHomeDirectory
-    return $ h ++ "/.emperor/include/"-- "/usr/include/emperor/"
+    return $ h ++ "/.emperor/packages/"-- "/usr/include/emperor/"
 
 getDataLoc :: IO String
 getDataLoc = do
     h <- getHomeDirectory
-    return $ h ++ "/.emperor/data/"-- "/usr/share/emperor/"
+    return $ h ++ "/.emperor/packages/"-- "/usr/share/emperor/"
