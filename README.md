@@ -88,3 +88,5 @@ This project is distributed under the [GPL-v3.0][license] license.
 ## Author
 
 This project is primarily maintained by Edward Jones.
+
+[license]: https://github.com/emperor-lang/emperor/blob/master/LICENSE
