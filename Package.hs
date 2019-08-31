@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 
-module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackageMeta) where
+module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackage, getPackageFromDirectory, getPackageMeta) where
 
 import           Args                 (Args, input)
 import           Data.Aeson           (FromJSON, ToJSON, Value(Object), eitherDecode, object, parseJSON, toJSON, (.:),
@@ -100,26 +100,32 @@ parseDependencyString (s:ss)
         where
             (p,v) = parseDependencyString ss
 
+getPackageFromDirectory :: FilePath -> IO (Maybe Package)
+getPackageFromDirectory d = getPackage $ d ++ if last d == '/' then "package.json" else "/package.json"
+
+getPackage :: FilePath -> IO (Maybe Package)
+getPackage f = do
+        r <- doesFileExist f
+        if r then do
+            c <- readFile f
+            getPackageMeta' c
+        else
+            return Nothing
+
 getPackageMeta :: Args -> IO (Maybe Package)
 getPackageMeta args =
     if (not . null) (input args) then
         if input args == "-" then do
             c <- getContents
             getPackageMeta' c
-        else do
-            c <- readFile $ input args
-            getPackageMeta' c
-    else do
-        r <- doesFileExist "./package.json"
-        if r then do
-            c <- readFile "./package.json"
-            getPackageMeta' c
         else
-            return Nothing
-    where
-        getPackageMeta' :: ByteString -> IO (Maybe Package)
-        getPackageMeta' c = case eitherDecode c of
-            Left m -> do
-                hPutStrLn stderr $ "Failed to parse json from input: " ++ m
-                exitFailure
-            Right p -> return $ Just p
+            getPackage $ input args
+    else do
+        getPackage "./package.json"
+
+getPackageMeta' :: ByteString -> IO (Maybe Package)
+getPackageMeta' c = case eitherDecode c of
+    Left m -> do
+        hPutStrLn stderr $ "Failed to parse json from input: " ++ m
+        exitFailure
+    Right p -> return $ Just p
