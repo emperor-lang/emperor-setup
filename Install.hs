@@ -23,7 +23,7 @@ doInstallDependencies args = do
 installPackageDependencies :: Args -> Package -> IO ()
 installPackageDependencies args pkg = do
     let ds = dependencies pkg
-    if force args then do
+    if force args then
         installDependenciesAction'' ds
     else do
         mdsr <- missingDependencies ds
@@ -58,37 +58,37 @@ installPackageDependencies args pkg = do
                     putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
                     (c, out, err) <- if not . dryRun $ args then
                             readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
-                        else 
+                        else
                             return (ExitSuccess, "", "")
                     print (c, out, err)
 
-                    let gitCmd = RawCommand "pwd" []
-                    let gitProc = CreateProcess { cwd = Just dependencyCloneDirectory
-                        , cmdspec = gitCmd
-                        , env = Nothing
-                        , std_in = CreatePipe
-                        , std_err = CreatePipe
-                        , std_out = CreatePipe
-                        , close_fds = True
-                        , create_group = False
-                        , delegate_ctlc = False
-                        , detach_console = False
-                        , create_new_console = False
-                        , new_session = False
-                        , child_group = Nothing
-                        , child_user = Nothing
-                        }
-                    print gitCmd
-                    (c', out', err') <- if not . dryRun $ args then
-                            readCreateProcessWithExitCode gitProc ""
-                        else 
-                            return (ExitSuccess, "", "")
+                    -- let gitCmd = RawCommand "make" []
+                    -- let gitProc = CreateProcess { cwd = Just dependencyCloneDirectory
+                    --     , cmdspec = gitCmd
+                    --     , env = Nothing
+                    --     , std_in = CreatePipe
+                    --     , std_err = CreatePipe
+                    --     , std_out = CreatePipe
+                    --     , close_fds = True
+                    --     , create_group = False
+                    --     , delegate_ctlc = False
+                    --     , detach_console = False
+                    --     , create_new_console = False
+                    --     , new_session = False
+                    --     , child_group = Nothing
+                    --     , child_user = Nothing
+                    --     }
+                    -- print gitCmd
+                    -- (c', out', err') <- if not . dryRun $ args then
+                    --         readCreateProcessWithExitCode gitProc ""
+                    --     else
+                    --         return (ExitSuccess, "", "")
                     print c
                     hPutStrLn stderr err
                     putStrLn out
-                    print c'
-                    hPutStrLn stderr err'
-                    putStrLn out'
+                    -- print c'
+                    -- hPutStrLn stderr err'
+                    -- putStrLn out'
 
             installDependenciesAction'' ds
         refreshDir :: String -> IO ()

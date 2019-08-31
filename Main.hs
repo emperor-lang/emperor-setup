@@ -11,7 +11,7 @@ import           Locations            (getBinLoc, getDataLoc, getIncludeLoc, get
 import           Package              (Dependency(..), Package(dependencies), getPackageMeta, hasDependency,
                                        insertDependency, name, parseDependencyString, version)
 import           PackageRepo          (getMostRecentVersion)
-import           Prelude              hiding (getContents, readFile, writeFile)
+import           Prelude              hiding (writeFile)
 import           System.Environment   (getProgName)
 import           System.Exit          (exitFailure)
 import           System.IO            (hPutStrLn, stderr)
@@ -55,14 +55,14 @@ addDependencyAction args = do
                 Left m -> do
                     hPutStrLn stderr m
                     exitFailure
-                Right v -> return (Dependency { dependencyName = d, dependencyVersion = v })
-        (d, Just v) -> return (Dependency { dependencyName = d, dependencyVersion = v })
+                Right v -> return Dependency { dependencyName = d, dependencyVersion = v }
+        (d, Just v) -> return Dependency { dependencyName = d, dependencyVersion = v }
     r <- getPackageMeta args
     case r of
         Nothing -> do
             hPutStrLn stderr "Cannot add dependencies with no package.json/manifest"
             exitFailure
-        Just p -> do
+        Just p ->
             if p `hasDependency` dep then do
                 hPutStrLn stderr $ "This project already depends on " ++ show dep
                 exitFailure
@@ -83,8 +83,8 @@ cFlagsAction args = do
         Just p -> do
             libLoc <- getLibLoc
             includeLoc <- getIncludeLoc
-            let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
-            let includeLocations = unwords $ (["-I" ++ includeLoc, "-I" ++ includeLoc ++ "banned/"] ++) $ (\d -> "-I" ++ includeLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
+            let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
+            let includeLocations = unwords $ (["-I" ++ includeLoc, "-I" ++ includeLoc ++ "banned/"] ++) $ (\d -> "-I" ++ includeLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 sanitise :: Dependency -> Dependency
@@ -95,15 +95,15 @@ libsAction args = do
     r <- getPackageMeta args
     case r of
         Nothing -> return ()
-        Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> (dependencies) p
+        Just p -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> dependencies p
 
 writePackageMeta :: Args -> Package -> IO ()
 writePackageMeta args p = do
     let c = encode p
-    if (not . null) (input args) then do
-        if input args == "-" then do
+    if (not . null) (input args) then
+        if input args == "-" then
             print c
-        else do
+        else
             writeFile (input args) c
     else
         writeFile "./package.json" c

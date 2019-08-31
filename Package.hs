@@ -2,7 +2,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 
 module Package (Package(..), Author(..), Dependency(..), HasName, HasVersion, hasDependency, insertDependency, parseDependencyString, version, name, getPackageMeta) where
@@ -103,7 +102,7 @@ parseDependencyString (s:ss)
 
 getPackageMeta :: Args -> IO (Maybe Package)
 getPackageMeta args =
-    if (not . null) (input args) then do
+    if (not . null) (input args) then
         if input args == "-" then do
             c <- getContents
             getPackageMeta' c
