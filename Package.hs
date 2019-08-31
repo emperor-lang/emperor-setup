@@ -101,7 +101,7 @@ parseDependencyString (s:ss)
             (p,v) = parseDependencyString ss
 
 getPackageFromDirectory :: FilePath -> IO (Maybe Package)
-getPackageFromDirectory d = getPackage $ d ++ if last d == '/' then "package.json" else "/package.json"
+getPackageFromDirectory d = getPackage $ d ++ (if last d == '/' then "" else "/") ++ "manifest.json"
 
 getPackage :: FilePath -> IO (Maybe Package)
 getPackage f = do
@@ -120,8 +120,8 @@ getPackageMeta args =
             getPackageMeta' c
         else
             getPackage $ input args
-    else do
-        getPackage "./package.json"
+    else
+        getPackage "./manifest.json"
 
 getPackageMeta' :: ByteString -> IO (Maybe Package)
 getPackageMeta' c = case eitherDecode c of

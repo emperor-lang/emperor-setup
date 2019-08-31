@@ -60,7 +60,7 @@ addDependencyAction args = do
     r <- getPackageMeta args
     case r of
         Nothing -> do
-            hPutStrLn stderr "Cannot add dependencies with no package.json/manifest"
+            hPutStrLn stderr "Cannot add dependencies with no manifest.json"
             exitFailure
         Just p ->
             if p `hasDependency` dep then do
@@ -81,10 +81,10 @@ cFlagsAction args = do
     case r of
         Nothing -> putStrLn standardOptions
         Just p -> do
-            libLoc <- getLibLoc
-            includeLoc <- getIncludeLoc
-            let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
-            let includeLocations = unwords $ (["-I" ++ includeLoc, "-I" ++ includeLoc ++ "banned/"] ++) $ (\d -> "-I" ++ includeLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
+            packageInstallLoc <- getPackageInstallLoc
+            includeInstallLoc <- getIncludeInstallLoc
+            let libraryLocations = unwords $ (\d -> "-L" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
+            let includeLocations = unwords $ (["-I" ++ includeInstallLoc] ++) $ (\d -> "-I" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> dependencies p
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
 
 sanitise :: Dependency -> Dependency
@@ -106,7 +106,7 @@ writePackageMeta args p = do
         else
             writeFile (input args) c
     else
-        writeFile "./package.json" c
+        writeFile "./manifest.json" c
 
 
 sanitiseShellString :: String -> String
