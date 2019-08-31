@@ -7,7 +7,7 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
 import           Install              (doInstallDependencies, installPackageDependencies)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
-import           Locations (binLoc, includeLoc, dataLoc, libLoc) 
+import           Locations (getBinLoc, getIncludeLoc, getDataLoc, getLibLoc) 
 import           Package              (Dependency(..), Package(dependencies), hasDependency, insertDependency, name,
                                        parseDependencyString, version, getPackageMeta)
 import           PackageRepo          (getMostRecentVersion)
@@ -29,13 +29,17 @@ main = do
         cFlagsAction args
     else if libs args then
         libsAction args
-    else if binaryInstallLocation args then
+    else if binaryInstallLocation args then do
+        binLoc <- getBinLoc
         putStrLn binLoc
-    else if libraryInstallLocation args then
+    else if libraryInstallLocation args then do
+        libLoc <- getLibLoc
         putStrLn libLoc
-    else if dataInstallLocation args then
+    else if dataInstallLocation args then do
+        dataLoc <- getDataLoc
         putStrLn dataLoc
-    else if includeLocation args then
+    else if includeLocation args then do
+        includeLoc <- getIncludeLoc
         putStrLn includeLoc
     else do
         progname <- getProgName
@@ -77,6 +81,8 @@ cFlagsAction args = do
     case r of
         Nothing -> putStrLn standardOptions
         Just p -> do
+            libLoc <- getLibLoc
+            includeLoc <- getIncludeLoc
             let libraryLocations = unwords $ (\d -> "-L" ++ libLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
             let includeLocations = unwords $ (["-I" ++ includeLoc, "-I" ++ includeLoc ++ "banned/"] ++) $ (\d -> "-I" ++ includeLoc ++ (name d) ++ "/" ++ (version d) ++ "/") . sanitise <$> dependencies p
             putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations

@@ -1,13 +1,23 @@
-module Locations (binLoc, libLoc, includeLoc, dataLoc) where
+module Locations (getBinLoc, getLibLoc, getIncludeLoc, getDataLoc) where
 
-binLoc :: String
-binLoc = "/usr/bin/"
+import System.Directory (getHomeDirectory)
 
-libLoc :: String
-libLoc = "./" -- "/usr/lib/emperor/"
+getBinLoc :: IO String
+getBinLoc = do
+    h <- getHomeDirectory
+    return $ h ++ "/usr/bin/"
 
-includeLoc :: String
-includeLoc = "/usr/include/emperor/"
+getLibLoc :: IO String
+getLibLoc = do
+    h <- getHomeDirectory
+    return $ h ++ "/.emperor/lib/" -- "/usr/lib/emperor/"
 
-dataLoc :: String
-dataLoc = "/usr/share/emperor/"
+getIncludeLoc :: IO String
+getIncludeLoc = do
+    h <- getHomeDirectory
+    return $ h ++ "/.emperor/include/"-- "/usr/include/emperor/"
+
+getDataLoc :: IO String
+getDataLoc = do
+    h <- getHomeDirectory
+    return $ h ++ "/.emperor/data/"-- "/usr/share/emperor/"

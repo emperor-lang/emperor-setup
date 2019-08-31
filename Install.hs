@@ -1,15 +1,13 @@
 module Install (doInstallDependencies, installPackageDependencies) where
 
-import Args (Args, force)
+import Args (Args, force, dryRun)
 import Control.Monad (when)
-import Locations (dataLoc, includeLoc, libLoc)
+import Locations (getDataLoc, getIncludeLoc, getLibLoc)
 import Package (Package, Dependency, dependencies, getPackageMeta, name, version)
 import           System.Directory     (createDirectoryIfMissing, doesDirectoryExist,
                                        removeDirectoryRecursive)
-import           System.Environment   (getProgName)
-import           System.Exit          (exitFailure)
+import           System.Exit          (ExitCode(..), exitFailure)
 import           System.IO            (hPutStrLn, stderr)
-import           System.Posix.Files   (fileAccess)
 import System.Process (CreateProcess(..), CmdSpec(..), StdStream(CreatePipe), readCreateProcessWithExitCode, readProcessWithExitCode)
 import PackageRepo (getPackageLocation)
 
@@ -25,12 +23,7 @@ doInstallDependencies args = do
 installPackageDependencies :: Args -> Package -> IO ()
 installPackageDependencies args pkg = do
     let ds = dependencies pkg
-    sufficientPermissions <- fileAccess libLoc True True False
-    if not sufficientPermissions then do
-        pn <- getProgName
-        hPutStrLn stderr $ pn ++ " has been run with insufficient permissions"
-        exitFailure
-    else if force args then do
+    if force args then do
         installDependenciesAction'' ds
     else do
         mdsr <- missingDependencies ds
@@ -44,7 +37,12 @@ installPackageDependencies args pkg = do
         installDependenciesAction'' [] = return ()
         installDependenciesAction'' (d:ds) = do
             putStrLn $ "Installing " ++ show d
-            
+
+            libLoc <- getLibLoc
+            includeLoc <- getIncludeLoc
+            dataLoc <- getDataLoc
+
+            -- ! Do not refresh binLoc! This may have bad consequences :(
             refreshDir $ libLoc ++ name d ++ '/' : version d ++ "/"
             refreshDir $ includeLoc ++ name d ++ '/' : version d ++ "/"
             refreshDir $ dataLoc ++ name d ++ '/' : version d ++ "/"
@@ -57,10 +55,14 @@ installPackageDependencies args pkg = do
                     hPutStrLn stderr m
                     exitFailure
                 Right u -> do
-                    putStrLn $ "git " ++ show [ "clone", u, dependencyCloneDirectory ]
-                    (c, out, err) <- readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
+                    putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
+                    (c, out, err) <- if not . dryRun $ args then
+                            readProcessWithExitCode "git" [ "clone", u, dependencyCloneDirectory ] ""
+                        else 
+                            return (ExitSuccess, "", "")
+                    print (c, out, err)
 
-                    let gitCmd = RawCommand "pwd" [] -- [ "clone", u, dependencyCloneDirectory ]
+                    let gitCmd = RawCommand "pwd" []
                     let gitProc = CreateProcess { cwd = Just dependencyCloneDirectory
                         , cmdspec = gitCmd
                         , env = Nothing
@@ -76,9 +78,11 @@ installPackageDependencies args pkg = do
                         , child_group = Nothing
                         , child_user = Nothing
                         }
-                    (c', out', err') <- readCreateProcessWithExitCode gitProc ""
                     print gitCmd
-                    print gitProc
+                    (c', out', err') <- if not . dryRun $ args then
+                            readCreateProcessWithExitCode gitProc ""
+                        else 
+                            return (ExitSuccess, "", "")
                     print c
                     hPutStrLn stderr err
                     putStrLn out
@@ -100,6 +104,7 @@ missingDependencies (d:ds) = do
     case dsr of
         Left m -> return . Left $ m
         Right ds' -> do
+            libLoc <- getLibLoc
             r <- doesDirectoryExist $ libLoc ++ name d ++ '/' : version d ++ "/"
             return . Right $ if r then ds' else d:ds'
 
