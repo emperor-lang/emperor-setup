@@ -24,6 +24,7 @@ import           Args                 (Args, addDependency, binaryInstallLocatio
                                        updatePackageRepo)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
+import           Defaults             (getDefaultDependencies)
 import           Install              (doInstallDependencies, ensurePackageRepoExists, installPackageDependencies)
 import           Locations            (getBinLoc, getIncludeInstallLoc, getPackageInstallLoc)
 import           Package              (Dependency(..), Package(dependencies), getPackageMeta, hasDependency,
@@ -173,23 +174,6 @@ libsAction args = do
             hPutStrLn stderr m
             exitFailure
         Right ds -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> ds
-
--- | Obtain a list of default dependencies (with their versions) to be used when a manifest.json has neither been
--- specified nor found.
-getDefaultDependencies :: IO (Either String [Dependency])
-getDefaultDependencies = getDefaultDependencies' ["std"]
-    where
-        getDefaultDependencies' :: [String] -> IO (Either String [Dependency])
-        getDefaultDependencies' [] = return . Right $ []
-        getDefaultDependencies' (s:ss) = do
-            vr <- getMostRecentVersion s
-            case vr of
-                Left m -> return . Left $ m
-                Right v -> do
-                    rs <- getDefaultDependencies' ss
-                    case rs of
-                        Left m -> return . Left $ m
-                        Right ds -> return . Right $ Dependency s v : ds
 
 -- | Output a JSON representation of the package
 writePackageMeta :: Args -> Package -> IO ()
