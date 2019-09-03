@@ -127,8 +127,9 @@ addDependencyAction args = do
                 exitFailure
             else do
                 putStrLn $ "Adding dependency " ++ show dep
-                writePackageMeta args $ insertDependency p dep
-                installPackageDependencies args p
+                let p' = insertDependency p dep
+                writePackageMeta args p'
+                installPackageDependencies args p'
 
 -- | Install the dependencies specified in the manifest
 installDependenciesAction :: Args -> IO ()
