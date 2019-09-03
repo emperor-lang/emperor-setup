@@ -140,7 +140,10 @@ cFlagsAction args = do
     r <- getPackageMeta args
     includeInstallLoc <- getIncludeInstallLoc
     packageInstallLoc <- getPackageInstallLoc
-    let standardOptions = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -O3 -g -I. -I" ++ includeInstallLoc++ (if entryPoint args then "" else " -c")
+    let warningOpts = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -Wno-unused-variable -Wno-unused-parameter"
+    let optimisationOpts = "-O3"
+    let codeGenerationOpts = "-g -fno-exceptions"
+    let standardOptions = warningOpts ++ ' ' : optimisationOpts ++ ' ' : codeGenerationOpts ++ (if entryPoint args then "" else " -c") ++ " -I. -I" ++ includeInstallLoc
     -- (defaultLibs, defaultHeaders) <-
     lr <- case r of
         Nothing -> do
