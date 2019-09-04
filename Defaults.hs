@@ -19,7 +19,7 @@ import           PackageRepo (getMostRecentVersion)
 -- | Obtain a list of default dependencies (with their versions) to be used when a manifest.json has neither been
 -- specified nor found.
 getDefaultDependencies :: IO (Either String [Dependency])
-getDefaultDependencies = getDefaultDependencies' ["std"]
+getDefaultDependencies = getDefaultDependencies' ["base", "std"]
     where
         getDefaultDependencies' :: [String] -> IO (Either String [Dependency])
         getDefaultDependencies' [] = return . Right $ []
