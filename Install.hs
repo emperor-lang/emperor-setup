@@ -38,7 +38,13 @@ doInstallDependencies args = do
                 Left m -> do
                     hPutStrLn stderr m
                     exitFailure
-                Right ds -> installDependenciesAction'' args ds
+                Right ds -> do
+                    mdsr <- missingDependencies ds
+                    case mdsr of
+                        Left m -> do
+                            hPutStrLn stderr m
+                            exitFailure
+                        Right mds -> installDependenciesAction'' args mds
         Just p -> installPackageDependencies' args p
 
 -- | Install the dependencies of a given package
