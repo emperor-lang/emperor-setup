@@ -23,9 +23,8 @@ import           PackageRepo      (getPackageLocation, packageRepoDefaultLocatio
 import           System.Directory (copyFileWithMetadata, createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
                                    removeDirectoryRecursive)
 import           System.Exit      (ExitCode(..), exitFailure)
-import           System.IO        (hPutStr, hPutStrLn, stderr)
-import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(CreatePipe), readCreateProcessWithExitCode,
-                                   readProcessWithExitCode)
+import           System.IO        (hPutStrLn, stderr, stdout)
+import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(..), createProcess, waitForProcess)
 -- | Install the dependencies required by the command-line arguments
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do
@@ -83,12 +82,10 @@ installDependenciesAction'' args (d:ds) = do
                 e <- doesDirectoryExist dependencyCloneDirectory
                 when e $ removeDirectoryRecursive dependencyCloneDirectory
 
-                putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
-                (c, _, err) <- if not . dryRun $ args then
-                        readProcessWithExitCode "git" [ "clone", "--depth=1", u, dependencyCloneDirectory ] ""
-                    else
-                        return (ExitSuccess, "", "")
-                hPutStr stderr err
+                -- putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
+                let packageFetchCmd = RawCommand "git" [ "clone", "--depth=1", u, dependencyCloneDirectory ]
+                let packageFetchProc = createProcessInDirectory packageFetchCmd "."
+                c <- execute args packageFetchCmd packageFetchProc
                 if c /= ExitSuccess then do
                     hPutStrLn stderr $ "Failed to get dependency " ++ show d
                     exitFailure
@@ -101,13 +98,7 @@ installDependenciesAction'' args (d:ds) = do
 
                     let gitCmd = RawCommand "make" []
                     let gitProc = createProcessInDirectory gitCmd dependencyCloneDirectory
-                    putStrLn "make"
-                    (c', out', err') <- if not . dryRun $ args then
-                            readCreateProcessWithExitCode gitProc ""
-                        else
-                            return (ExitSuccess, "", "")
-                    hPutStr stderr err'
-                    putStr out'
+                    c' <- execute args gitCmd gitProc
                     when (c' /= ExitSuccess) $ do
                         hPutStrLn stderr $ "Running make failed for " ++ show d
                         exitFailure
@@ -165,42 +156,51 @@ ensurePackageRepoExists args =
     where
         ensurePackageRepoExists' :: IO ()
         ensurePackageRepoExists' = do
+            -- Clean if folder already present
             let cloneLocation = "./.emperor-known-packages/"
             e' <- doesDirectoryExist cloneLocation
             when e' $ removeDirectoryRecursive cloneLocation
-            putStrLn $ "git clone --depth=1 \"https://github.com/emperor-lang/known-packages.git\" " ++ cloneLocation
-            (c, out, err) <- if not . dryRun $ args then
-                    readProcessWithExitCode "git" [ "clone", "--depth=1", "https://github.com/emperor-lang/known-packages.git", cloneLocation ] ""
-                else
-                    return (ExitSuccess, "", "")
-            putStr out
-            hPutStr stderr err
+
+            -- Clone the known packages repo
+            let packageRepoCloneCmd = RawCommand "git" [ "clone", "--depth=1", "https://github.com/emperor-lang/known-packages.git", cloneLocation ]
+            let packageRepoCloneProc = createProcessInDirectory packageRepoCloneCmd "."
+            c <- execute args packageRepoCloneCmd packageRepoCloneProc
             if c /= ExitSuccess then do
                 hPutStrLn stderr "Failed to clone repo of known packages"
                 exitFailure
             else do
+                -- Install the package repo
                 let packageRepoBuildCmd = RawCommand "make" ["install"]
                 let packageRepoBuildProc = createProcessInDirectory packageRepoBuildCmd cloneLocation
-                putStrLn "make"
-                (c', out', err') <- if not . dryRun $ args then
-                        readCreateProcessWithExitCode packageRepoBuildProc ""
-                    else
-                        return (ExitSuccess, "", "")
-                putStr out'
-                hPutStr stderr err'
-                when (c' /= ExitSuccess) $ do
+                c' <- execute args packageRepoBuildCmd packageRepoBuildProc
+                unless (c' == ExitSuccess) $ do
                     hPutStrLn stderr "Failed to install list of known packages"
                     exitFailure
+            -- Clean once done 
             e'' <- doesDirectoryExist cloneLocation
             when e'' $ removeDirectoryRecursive cloneLocation
+
+execute :: Args -> CmdSpec -> CreateProcess -> IO ExitCode
+execute args cmd proc = do
+        putStrLn $ showCmd cmd
+        if not . dryRun $ args then do
+            (_, _, _, h) <- createProcess proc
+            waitForProcess h
+        else
+            return ExitSuccess
+    where
+        showCmd :: CmdSpec -> String
+        showCmd cmd' = case cmd' of
+            ShellCommand s -> s
+            RawCommand s ss -> s ++ ' ' : unwords ss
 
 createProcessInDirectory :: CmdSpec -> String -> CreateProcess
 createProcessInDirectory c d = CreateProcess { cwd = Just d
     , cmdspec = c
     , env = Nothing
     , std_in = CreatePipe
-    , std_err = CreatePipe
-    , std_out = CreatePipe
+    , std_err = UseHandle stderr
+    , std_out = UseHandle stdout
     , close_fds = True
     , create_group = False
     , delegate_ctlc = False
