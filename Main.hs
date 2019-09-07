@@ -143,9 +143,9 @@ cFlagsAction args = do
     packageInstallLoc <- getPackageInstallLoc
     let warningOpts = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -Wno-unused-variable -Wno-unused-parameter"
     let optimisationOpts = "-O3"
-    let codeGenerationOpts = "-g -fno-exceptions"
+    let codeGenerationOpts = "-g -rdynamic -fno-exceptions"
     let standardOptions = warningOpts ++ ' ' : optimisationOpts ++ ' ' : codeGenerationOpts ++ (if entryPoint args then "" else " -c") ++ " -I. -I" ++ includeInstallLoc
-    -- (defaultLibs, defaultHeaders) <-
+    
     lr <- case r of
         Nothing -> do
             sr <- getDefaultDependencies
