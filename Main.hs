@@ -18,10 +18,11 @@ of GCC flags.
 -}
 module Main (main, getPackageLocationAction, addDependencyAction, installDependenciesAction, cFlagsAction, libsAction) where
 
-import           Args                 (Args, addDependency, binaryInstallLocation, cFlags, dataInstallLocation,
+import           Args                 (Args, addDependency, bareProject, binaryInstallLocation, cFlags, dataInstallLocation,
                                        entryPoint, getPackageLocation, includeLocation, input, installDependencies,
                                        languageHeaderLocation, libraryInstallLocation, libs, parseArgv,
                                        updatePackageRepo)
+import           Control.Monad        (unless)
 import           Data.Aeson           (encode)
 import           Data.ByteString.Lazy (writeFile)
 import           Defaults             (getDefaultDependencies)
@@ -139,12 +140,13 @@ installDependenciesAction = doInstallDependencies
 cFlagsAction :: Args -> IO ()
 cFlagsAction args = do
     r <- getPackageMeta args
-    includeInstallLoc <- getIncludeInstallLoc
-    packageInstallLoc <- getPackageInstallLoc
+    includeInstallLoc <- if (not . bareProject) args then getIncludeInstallLoc else return ""
+    packageInstallLoc <- if (not . bareProject) args then getPackageInstallLoc else return ""
+    let formattedIncludeInstallLoc = if (not . bareProject) args then " -I" ++ includeInstallLoc else ""
     let warningOpts = "-Wall -Wextra -Wpedantic -Werror -pedantic-errors -Wno-unused-variable -Wno-unused-parameter"
     let optimisationOpts = "-O3"
     let codeGenerationOpts = "-g -rdynamic -fno-exceptions"
-    let standardOptions = warningOpts ++ ' ' : optimisationOpts ++ ' ' : codeGenerationOpts ++ (if entryPoint args then "" else " -c") ++ " -I. -I" ++ includeInstallLoc
+    let standardOptions = warningOpts ++ ' ' : optimisationOpts ++ ' ' : codeGenerationOpts ++ (if entryPoint args then "" else " -c") ++ " -I." ++ formattedIncludeInstallLoc
     
     lr <- case r of
         Nothing -> do
@@ -157,7 +159,10 @@ cFlagsAction args = do
         Right ls -> do
             let libraryLocations = unwords $ (\d -> "-L" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> ls
             let includeLocations = unwords $ (\d -> "-I" ++ packageInstallLoc ++ name d ++ "/" ++ version d ++ "/") . sanitise <$> ls
-            putStrLn $ standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
+            putStrLn $ if (not . bareProject) args then
+                    standardOptions ++ ' ' : libraryLocations ++ ' ' : includeLocations
+                else
+                    standardOptions
         Left m -> do
             hPutStrLn stderr m
             exitFailure
@@ -168,16 +173,17 @@ sanitise d = Dependency { dependencyName = (sanitiseShellString . name) d, depen
 
 -- | Output the libraries required by the package
 libsAction :: Args -> IO ()
-libsAction args = do
-    r <- getPackageMeta args
-    dsr <- case r of
-        Nothing -> getDefaultDependencies
-        Just p -> return . Right $ dependencies p
-    case dsr of
-        Left m -> do
-            hPutStrLn stderr m
-            exitFailure
-        Right ds -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> ds
+libsAction args = 
+    unless (bareProject args) $ do
+        r <- getPackageMeta args
+        dsr <- case r of
+            Nothing -> getDefaultDependencies
+            Just p -> return . Right $ dependencies p
+        case dsr of
+            Left m -> do
+                hPutStrLn stderr m
+                exitFailure
+            Right ds -> putStrLn . unwords $ (\d -> "-l" ++ (sanitiseShellString . name) d) <$> ds
 
 -- | Output a JSON representation of the package
 writePackageMeta :: Args -> Package -> IO ()

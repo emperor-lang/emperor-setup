@@ -177,6 +177,15 @@
 			"mandatory": false,
 			"help": "Output the location of a particular package",
 			"metaDest": "pkg"
+		},
+		{
+			"short": "-b",
+			"long": "--bare",
+			"type": "flag",
+			"default": "false",
+			"dest": "bareProject",
+			"mandatory": false,
+			"help": "Output compilation flags without libraries or include locations. Useful to ensure that foreign C code is compatible with emperor code. This also makes -lb do nothing."
 		}
 	]
 }
