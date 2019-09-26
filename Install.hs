@@ -215,6 +215,7 @@ createProcessInDirectory c d = CreateProcess { cwd = Just d
     , new_session = False
     , child_group = Nothing
     , child_user = Nothing
+    , use_process_jobs = False
     }
 
 missingDependencies :: [Dependency] -> IO (Either String [Dependency])
