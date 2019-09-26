@@ -26,6 +26,7 @@ import           System.Directory (copyFileWithMetadata,
                                    createDirectoryIfMissing, doesDirectoryExist,
                                    doesFileExist, removeDirectoryRecursive)
 import           System.Exit      (ExitCode (..), exitFailure)
+import           System.FilePath  (dropFileName)
 import           System.IO        (hPutStrLn, stderr, stdout)
 import           System.Process   (CmdSpec (..), CreateProcess (..),
                                    StdStream (..), createProcess,
@@ -153,6 +154,7 @@ installDependenciesAction'' args (d:ds) = do
         distributeFiles _ [] = return ()
         distributeFiles t ((f,pf):fs) = do
             putStrLn $ "install " ++ show pf ++ ' ' : show (t ++ f)
+            createDirectoryIfMissing True (dropFileName $ t ++ f)
             copyFileWithMetadata pf (t ++ f)
             distributeFiles t fs
 

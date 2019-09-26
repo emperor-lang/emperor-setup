@@ -75,6 +75,7 @@ executable emperor-setup
                       bytestring >=0.10 && <0.11,
                       containers >=0.6 && <0.7,
                       directory >=1.3 && <1.4,
+                      filepath >=1.4 && <1.5,
                       process >=1.6 && <1.7,
                       unix >=2.7 && <2.8
 
