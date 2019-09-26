@@ -45,7 +45,10 @@ doInstallDependencies args = do
                     hPutStrLn stderr m
                     exitFailure
                 Right ds -> do
-                    mdsr <- missingDependencies ds
+                    mdsr <- if force args then
+                            return $ Right ds
+                        else
+                            missingDependencies ds
                     case mdsr of
                         Left m -> do
                             hPutStrLn stderr m
