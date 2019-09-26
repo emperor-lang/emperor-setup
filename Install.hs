@@ -17,14 +17,19 @@ import           Args             (Args, dryRun, force, updatePackageRepo)
 import           Control.Monad    (unless, when)
 import           Defaults         (getDefaultDependencies)
 import           Locations        (getPackageInstallLoc)
-import           Package          (Dependency, Package, dependencies, files, getPackageFromDirectory, getPackageMeta,
+import           Package          (Dependency, Package, dependencies, files,
+                                   getPackageFromDirectory, getPackageMeta,
                                    name, version)
-import           PackageRepo      (getPackageLocation, packageRepoDefaultLocation)
-import           System.Directory (copyFileWithMetadata, createDirectoryIfMissing, doesDirectoryExist, doesFileExist,
-                                   removeDirectoryRecursive)
-import           System.Exit      (ExitCode(..), exitFailure)
+import           PackageRepo      (getPackageLocation,
+                                   packageRepoDefaultLocation)
+import           System.Directory (copyFileWithMetadata,
+                                   createDirectoryIfMissing, doesDirectoryExist,
+                                   doesFileExist, removeDirectoryRecursive)
+import           System.Exit      (ExitCode (..), exitFailure)
 import           System.IO        (hPutStrLn, stderr, stdout)
-import           System.Process   (CmdSpec(..), CreateProcess(..), StdStream(..), createProcess, waitForProcess)
+import           System.Process   (CmdSpec (..), CreateProcess (..),
+                                   StdStream (..), createProcess,
+                                   waitForProcess)
 -- | Install the dependencies required by the command-line arguments
 doInstallDependencies :: Args -> IO ()
 doInstallDependencies args = do
@@ -89,7 +94,7 @@ installDependenciesAction'' args (d:ds) = do
                 when e $ removeDirectoryRecursive dependencyCloneDirectory
 
                 -- putStrLn $ "git clone " ++ show u ++ ' ' : show dependencyCloneDirectory
-                let packageFetchCmd = RawCommand "git" [ "clone", "--depth=1", u, dependencyCloneDirectory ]
+                let packageFetchCmd = RawCommand "git" [ "clone", "--depth=1", u, dependencyCloneDirectory, "--recurse-submodules" ]
                 let packageFetchProc = createProcessInDirectory packageFetchCmd "."
                 c <- execute args packageFetchCmd packageFetchProc
                 if c /= ExitSuccess then do
@@ -182,7 +187,7 @@ ensurePackageRepoExists args =
                 unless (c' == ExitSuccess) $ do
                     hPutStrLn stderr "Failed to install list of known packages"
                     exitFailure
-            -- Clean once done 
+            -- Clean once done
             e'' <- doesDirectoryExist cloneLocation
             when e'' $ removeDirectoryRecursive cloneLocation
 
@@ -197,7 +202,7 @@ execute args cmd proc = do
     where
         showCmd :: CmdSpec -> String
         showCmd cmd' = case cmd' of
-            ShellCommand s -> s
+            ShellCommand s  -> s
             RawCommand s ss -> s ++ ' ' : unwords ss
 
 createProcessInDirectory :: CmdSpec -> String -> CreateProcess
