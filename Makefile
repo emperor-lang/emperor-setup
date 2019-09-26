@@ -31,13 +31,12 @@ all: build ## Build everything
 build: ./emperor-setup ## Build everything, explicitly
 .PHONY: build
 
-./emperor-setup: ./dist/build/emperor-setup/emperor-setup
-	@echo "[[ ! -f $@ ]] && ln -s $^ $@"
-	$(shell [[ ! -f $@ ]] && ln -s $^ $@)
+./emperor-setup: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/bin/emperor-setup
+	ln -sf $^ $@
 .DELETE_ON_ERROR: ./emperor-setup
 
-./dist/build/emperor-setup/emperor-setup: ./Args.hs $(shell find . -name '*.hs')
-	cabal build
+./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/bin/emperor-setup: ./Args.hs $(shell find . -name '*.hs')
+	stack build
 
 ./Args.hs: emperor-setup.json
 	arggen_haskell < $^ > $@
@@ -49,19 +48,19 @@ build: ./emperor-setup ## Build everything, explicitly
 install: /usr/bin/emperor-setup /usr/share/man/man1/emperor-setup.1.gz $(COMPLETION_INSTALL_LOCATION) ## Install binaries, libraries and documentation
 .PHONY: install
 
-/usr/bin/emperor-setup: ./dist/build/emperor-setup/emperor-setup
+/usr/bin/emperor-setup: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/bin/emperor-setup
 	sudo install -m 755 $^ $@
 
-man: ./dist/doc/man/emperor-setup.1.gz; ## Make the man page
+man: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/emperor-setup.1.gz; ## Make the man page
 .PHONY: man
 
-/usr/share/man/man1/emperor-setup.1.gz: ./dist/doc/man/emperor-setup.1.gz
+/usr/share/man/man1/emperor-setup.1.gz: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/emperor-setup.1.gz
 	sudo install -m 644 $^ $@
 
-./dist/doc/man/emperor-setup.1.gz: emperor-setup.json
-	mkdir -p ./dist/doc/man/ 2>/dev/null || true
+./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/man/emperor-setup.1.gz: emperor-setup.json
+	mkdir -p ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/man/ 2>/dev/null || true
 	(mangen | gzip --best) < $^ > $@
-.DELETE_ON_ERROR: ./dist/doc/man/emperor-setup.1.gz
+.DELETE_ON_ERROR: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/man/emperor-setup.1.gz
 
 $(COMPLETION_INSTALL_LOCATION): ./emperor-setup_completions.sh;
 	sudo install -m 644 $^ $@
@@ -70,8 +69,8 @@ $(COMPLETION_INSTALL_LOCATION): ./emperor-setup_completions.sh;
 	argcompgen < $< > $@
 .DELETE_ON_ERROR: ./emperor-setup_completions.sh
 
-format: $(shell find . -name '*.hs' | grep -v dist | grep -v Args) ## Run the formatter on all non-generated source files
-	@echo $(shell find . -name '*.hs' | grep -v dist | grep -v Args)
+format: $(shell find . -name '*.hs' | grep -v .stack-work | grep -v Args) ## Run the formatter on all non-generated source files
+	@echo $(shell find . -name '*.hs' | grep -v .stack-work | grep -v Args)
 	$(FORMATTER) $(FORMATTER_FLAGS) $^
 .PHONY: format
 
@@ -79,17 +78,17 @@ lint: ./Args.hs $(shell find . -name '*.hs') ## Run the linter on all non-genera
 	$(LINTER) $(LINTER_FLAGS) $^
 .PHONY: lint
 
-doc: dist/doc/html/emperor-setup/emperor-setup/index.html ## Make the documentation
+doc: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/html/index.html ## Make the documentation
 .PHONY: doc
 
-open-doc: dist/doc/html/emperor-setup/emperor-setup/index.html ## Open the documentationin the default browser
+open-doc: ./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/html/index.html ## Open the documentationin the default browser
 	$(OPEN) $<
 .PHONY: open-doc
 
-dist/doc/html/emperor-setup/emperor-setup/index.html: $(shell find . -name '*.hs') ./Args.hs
+./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/html/index.html: $(shell find . -name '*.hs') ./Args.hs
 
-dist/doc/html/emperor-setup/emperor-setup/index.html: $(SOURCE_FILES)
-	cabal haddock --executables
+./.stack-work/install/x86_64-linux-tinfo6/a4fefd2a9618441c5b464352bd9d27949d738f84f553d0be92299367e59678e1/8.6.5/doc/emperor-setup-0.1.0.0/html/index.html: $(SOURCE_FILES)
+	stack haddock
 
 clean-installation: ## Remove installed executables, libraries and documentation
 	sudo $(RM) /usr/bin/emperor-setup

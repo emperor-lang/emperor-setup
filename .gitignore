@@ -8,3 +8,5 @@ docs/html/
 Args.hs
 dist/*
 test/
+.stack-work/
+stack.yaml.lock
