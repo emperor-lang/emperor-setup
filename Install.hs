@@ -86,7 +86,7 @@ installDependenciesAction'' args (d:ds) = do
         let installDirectory = packageInstallLoc ++ name d ++ '/' : version d ++ "/"
         refreshDir installDirectory
 
-        let dependencyCloneDirectory = name d ++ '-' : version d
+        let dependencyCloneDirectory = "/tmp/emperor-setup-dl_" ++ name d ++ '-' : version d
 
         r <- getPackageLocation (name d) (version d)
         case r of
